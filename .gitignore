@@ -4,3 +4,5 @@ references/
 *.out
 *.gz
 *.aux
+.venv
+.ipynb_checkpoints/
