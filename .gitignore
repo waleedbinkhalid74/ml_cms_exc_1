@@ -1,0 +1,6 @@
+references/
+*.log
+*.dvi
+*.out
+*.gz
+*.aux
