@@ -7,6 +7,7 @@ import sys
 from PyQt5.QtWidgets import QApplication
 from gui import GUI
 
+
 def parser_array2obj(array):
     """
     This function converts scenarios in numpy array format the follow the following encoding:
@@ -73,6 +74,7 @@ def scenario_loader():
     return scenario
     # TODO: Call parser to convert this numpy array into grid object once Qais has implemented the class structure.
 
+
 def scenario_builder():
     """
     Uses PyQt5 to build a custom scenario. User has to take the following steps:
@@ -99,10 +101,6 @@ def scenario_builder():
     app.exec_()
     # Extract the state of the GUI at the time it was closed
     custom_scenario = screen.save_data()
-    # Reshape the GUI from 1D array to a 2D array
-    custom_scenario = np.reshape(custom_scenario, (rows, cols))
     # Display to the user what they have created
     visualize_state(custom_scenario)
     return custom_scenario
-
-
