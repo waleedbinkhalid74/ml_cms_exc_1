@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
-from matplotlib import colors
+from matplotlib import colors, animation
 import matplotlib.patches as mpatches
-import matplotlib.animation as animation
 import numpy as np
 
 
@@ -10,10 +9,12 @@ def visualize_state(scenario):
     This function displays the state of the scenario at a certain instance.
 
     :param scenario: numpy array of the state of the grid. Encoding is as follows:
+    Array encoding rule
         0: Empty Cell
         1. Pedestrian Cell
         2. Obstical Cell
         3. Target Cell
+        All array entries must be ints or floats
 
     :return: None
     """
