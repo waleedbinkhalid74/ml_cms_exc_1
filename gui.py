@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import (QWidget, QGridLayout, QLineEdit, QPushButton, QApplication)
+from PyQt5.QtWidgets import (QWidget, QGridLayout, QLineEdit, QPushButton, QApplication, QSizePolicy)
 import numpy as np
 
 
@@ -57,10 +57,13 @@ class GUI(QWidget):
                                    "{"
                                    "background : yellow;"
                                    "}")
-            cell.setFixedWidth(50)
-            cell.setFixedHeight(50)
+            # cell.setFixedWidth(35)
+            # cell.setFixedHeight(35)
+            cell.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
             self.grid_layout.addWidget(cell, *position)
+            
         self.setWindowTitle('Crowd Modelling: Cellular Automaton')
+
 
     def save_data(self):
         """
