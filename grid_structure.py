@@ -52,6 +52,16 @@ class Pedestrian:
         """
         return self.cell.cell_type == CellType.PEDESTRIAN
 
+    def move(self, cell):
+        """
+
+        :param cell:
+        :return:
+        """
+        self.cell.cell_type = 0
+        self.cell = cell
+        self.cell.cell_type = 1
+
 
 class Grid:
     """
@@ -67,12 +77,12 @@ class Grid:
         super().__init__()
         self.rows = rows
         self.cols = cols
-        self.pedestrians = []
-        self.targets = []
         if cells is None:
             self.cells = np.array([[Cell(row, column) for column in range(cols)] for row in range(rows)])
         else:
             self.cells = cells
+        self.pedestrians = np.array([[Pedestrian(cell) for cell in row if cell.cell_type == 1] for row in cells])
+        self.targets = np.array([[cell for cell in row if cell.cell_type == 1] for row in cells])
 
     def is_valid(self):
         """
@@ -95,3 +105,15 @@ class Grid:
                     return False, f"pedestrians {self.pedestrians[i].id} and {self.pedestrians[j].id} " \
                                   f"are standing on the same cell"
         return True, "The grid is valid"
+
+    def change_cell_type(self, row: int, col: int, cell_type: CellType):
+        """
+
+        :param row:
+        :param col:
+        :param cell_type:
+        :return:
+        """
+        # TODO add or remove cell from pedestrians or target
+        self.cells[row, col].cell_type = cell_type
+
