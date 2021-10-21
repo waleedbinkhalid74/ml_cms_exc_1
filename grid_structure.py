@@ -14,18 +14,18 @@ class Cell:
     Cell class represents one cell in the grid. A cell can be a target, an obstacle or empty
     """
 
-    def __init__(self, row, col, cell_type=CellType.EMPTY):
+    def __init__(self, row: int, col: int, cell_type: CellType = CellType.EMPTY):
         """
         Initiate the cell with the given position to an empty cell
-        :param row: represents the cell position in the x-axis
-        :param col: represents the cell position in the y-axis
+        :param row: represents the cell position in the y-axis
+        :param col: represents the cell position in the x-axis
         :param cell_type: the type of the cell
         """
         super().__init__()
         self.row = row
         self.col = col
         self.cell_type = cell_type
-        self.utility = 0
+        self.distance_to_target = 0
 
 
 class Pedestrian:
@@ -35,7 +35,7 @@ class Pedestrian:
     """
     _id_counter = 0
 
-    def __init__(self, cell):
+    def __init__(self, cell: Cell):
         """
         Initiate the pedestrian with the given position & a unique id.
         :param cell: represents the cell where the pedestrian is standing
@@ -45,18 +45,18 @@ class Pedestrian:
         self.id = Pedestrian._id_counter
         self.cell = cell
 
-    def is_valid(self):
+    def is_valid(self) -> bool:
         """
-        Checks that the cell where the pedestrian is standing is occupied.
+        Checks that the cell where the pedestrian is standing is a pedestrian cell.
         :return: true or false
         """
         return self.cell.cell_type == CellType.PEDESTRIAN
 
-    def move(self, cell):
+    def move(self, cell: Cell) -> None:
         """
-
+        Changes the cell the pedestrian is standing on.
         :param cell:
-        :return:
+        :return: None
         """
         self.cell.cell_type = 0
         self.cell = cell
@@ -68,7 +68,7 @@ class Grid:
     Grid class represents a 2D array of cells.
     """
 
-    def __init__(self, rows, cols, cells=None):
+    def __init__(self, rows: int, cols: int, cells=None):
         """
         Set up basic attributes for the GUI object
         :param rows: row size of grid
@@ -81,20 +81,18 @@ class Grid:
             self.cells = np.array([[Cell(row, column) for column in range(cols)] for row in range(rows)])
         else:
             self.cells = cells
-        self.pedestrians = np.array([[Pedestrian(cell) for cell in row if cell.cell_type == 1] for row in cells])
-        self.targets = np.array([[cell for cell in row if cell.cell_type == 1] for row in cells])
+        self.pedestrians = np.array([[Pedestrian(cell)
+                                      for cell in row if cell.cell_type == 1]
+                                     for row in cells]).flatten()
 
     def is_valid(self):
         """
         Checks if all cells in the grid are valid cells and that there are no illegal overlap
-        :return: true or false with a error message
+        :return: true or false with an error message
         """
         if any(not ped.is_valid() for ped in self.pedestrians):
             # print(f"Some pedestrians are standing on cells with invalid types")
             return False, "Some pedestrians are standing on cells with invalid types"
-        if any(not tar.cell_type == CellType.TARGET for tar in self.targets):
-            # print(f"Some targets cells have the wrong type")
-            return False, f"Some targets cells have the wrong type"
 
         for i in range(len(self.pedestrians)):
             for j in range(i + 1, len(self.pedestrians)):
@@ -106,14 +104,27 @@ class Grid:
                                   f"are standing on the same cell"
         return True, "The grid is valid"
 
-    def change_cell_type(self, row: int, col: int, cell_type: CellType):
+    def __find_pedestrian(self, row: int, col: int) -> Pedestrian:
+        for ind, ped in enumerate(self.pedestrians):
+            if ped.cell.row == row and \
+                    ped.cell.col == col:
+                return ped
+
+    def change_cell_type(self, row: int, col: int, cell_type: CellType) -> None:
         """
 
-        :param row:
-        :param col:
-        :param cell_type:
-        :return:
+        :param row: row index
+        :param col: column index
+        :param cell_type: the new cell type
+        :return: None
         """
-        # TODO add or remove cell from pedestrians or target
+        if self.cells[row, col].cell_type == CellType.PEDESTRIAN:
+            np.delete(self.pedestrians, self.__find_pedestrian(row, col))
+        elif cell_type == CellType.PEDESTRIAN:
+            np.append(self.pedestrians, Pedestrian(self.cells[row, col]))
+
         self.cells[row, col].cell_type = cell_type
+
+
+
 

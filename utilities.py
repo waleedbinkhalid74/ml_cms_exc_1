@@ -6,10 +6,10 @@ import csv
 import sys
 from PyQt5.QtWidgets import QApplication
 from gui import GUI
-from grid import Grid, Cell, CellType, Pedestrian
+from grid_structure import Grid, Cell, CellType, Pedestrian
 
 
-def parser_array2obj(array):
+def parser_array2obj(array) -> Grid:
     """
     This function converts scenarios in numpy array format the follow the following encoding:
        Array encoding rule
@@ -26,24 +26,24 @@ def parser_array2obj(array):
     :return: Grid object
     """
     assert len(array.shape) == 2, f"The array to grid parser expects 2D array, given {array.shape}"
-    # cells = np.array([[Cell(row, column, CellType(array[row, column]))
-    #                    for column in range(array.shape[1])]
-    #                   for row in range(array.shape[0])])
-    grid = Grid(array.shape[0], array.shape[1])
-    for i in range(len(array[0, :])):
-        for j in range(len(array[:, 0])):
-            cell = Cell(i, j, CellType(array[i, j]))
-            grid.cells[i, j] = cell
-            if array[i, j] == 1:
-                grid.pedestrians.append(Pedestrian(cell))
-            elif array[i, j] == 3:
-                grid.targets.append(cell)
+    cells = np.array([[Cell(row, column, CellType(array[row, column]))
+                       for column in range(array.shape[1])]
+                      for row in range(array.shape[0])])
+    grid = Grid(array.shape[0], array.shape[1], cells)
+    # for i in range(len(array[0, :])):
+    #     for j in range(len(array[:, 0])):
+    #         cell = Cell(i, j, CellType(array[i, j]))
+    #         grid.cells[i, j] = cell
+    #         if array[i, j] == 1:
+    #             grid.pedestrians.append(Pedestrian(cell))
+    #         elif array[i, j] == 3:
+    #             grid.targets.append(cell)
     grid_valid, error_msg = grid.is_valid()
     assert grid_valid, error_msg
     return grid
 
 
-def parser_obj2array(grid):
+def parser_obj2array(grid) -> np.ndarray:
     """
     This function reads the grid object and converts it into a numpy array with following encoding
     Array encoding rule
