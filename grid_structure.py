@@ -26,6 +26,9 @@ class Cell:
         self.col = col
         self.cell_type = cell_type
         self.distance_to_target = 0
+        self.cost = 0
+        self.straight_neighbours = []
+        self.diagonal_neighbours = []
 
 
 class Pedestrian:
@@ -75,10 +78,14 @@ class Grid:
         :param cols: column size of grid
         """
         super().__init__()
+        self.past_states = [] # -> This is a list of numpy arrays of all the past states of
+                                # the grid starting from the initial state
         self.rows = rows
         self.cols = cols
+        self.time_step = 0
         if cells is None:
             self.cells = np.array([[Cell(row, column) for column in range(cols)] for row in range(rows)])
+            self.assign_neighbours()
         else:
             self.cells = cells
         self.pedestrians = np.array([[Pedestrian(cell)
@@ -125,6 +132,24 @@ class Grid:
 
         self.cells[row, col].cell_type = cell_type
 
+    def to_array(self) -> np.ndarray:
+        """
+        This function reads the grid object and converts it into a numpy array with following encoding
+        Array encoding rule
+            0: Empty Cell
+            1. Pedestrian Cell
+            2. Obstacle Cell
+            3. Target Cell
+        All array entries will be ints or floats
 
+        For more details on the class structure please see the report or the Class docstring.
 
+        :param grid: in Grid class format
+        :return: numpy array
+        """
+        array = np.array([[repr(cell.cell_type) for cell in row] for row in self.cells])
+        return array
 
+    def assign_neighbours(self):
+        # TODO: Complete the list of neighbours for each cell
+        pass
