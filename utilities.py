@@ -6,6 +6,7 @@ import csv
 import sys
 from PyQt5.QtWidgets import QApplication
 from gui import GUI
+from grid import Grid, Cell, CellType, Pedestrian
 
 
 def parser_array2obj(array):
@@ -24,8 +25,22 @@ def parser_array2obj(array):
     :param array: scenario in numpy array format
     :return: Grid object
     """
-    # TODO: Convert numpy array into grid object once Qais has implemented the class structure.
-    pass
+    assert len(array.shape) == 2, f"The array to grid parser expects 2D array, given {array.shape}"
+    # cells = np.array([[Cell(row, column, CellType(array[row, column]))
+    #                    for column in range(array.shape[1])]
+    #                   for row in range(array.shape[0])])
+    grid = Grid(array.shape[0], array.shape[1])
+    for i in range(len(array[0, :])):
+        for j in range(len(array[:, 0])):
+            cell = Cell(i, j, CellType(array[i, j]))
+            grid.cells[i, j] = cell
+            if array[i, j] == 1:
+                grid.pedestrians.append(Pedestrian(cell))
+            elif array[i, j] == 3:
+                grid.targets.append(cell)
+    grid_valid, error_msg = grid.is_valid()
+    assert grid_valid, error_msg
+    return grid
 
 
 def parser_obj2array(grid):
@@ -43,8 +58,8 @@ def parser_obj2array(grid):
     :param grid: in Grid class format
     :return: numpy array
     """
-    # TODO: Convert grid object into numpy array once Qais has implemented the class structure.
-    pass
+    array = np.array([[repr(cell.cell_type) for cell in row] for row in grid.cells])
+    return array
 
 
 def scenario_loader():
@@ -57,7 +72,6 @@ def scenario_loader():
 
     :return: Grid object
     """
-
     # Get the names of the available scenario files and list them nicely
     scenario_files = [f for f in listdir('scenarios') if isfile(join('scenarios', f))]
     print("Available scenario files are: ")
@@ -71,8 +85,7 @@ def scenario_loader():
     # Display the inital state of the scenario
     print("Initial state of the loaded scenario:")
     visualize_state(scenario)
-    return scenario
-    # TODO: Call parser to convert this numpy array into grid object once Qais has implemented the class structure.
+    return parser_array2obj(scenario)
 
 
 def scenario_builder():
