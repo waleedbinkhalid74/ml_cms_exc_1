@@ -144,7 +144,6 @@ class Grid:
 
         For more details on the class structure please see the report or the Class docstring.
 
-        :param grid: in Grid class format
         :return: numpy array
         """
         array = np.array([[repr(cell.cell_type) for cell in row] for row in self.cells])
@@ -153,3 +152,4 @@ class Grid:
     def assign_neighbours(self):
         # TODO: Complete the list of neighbours for each cell
         pass
+
