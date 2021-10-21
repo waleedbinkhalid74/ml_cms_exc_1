@@ -30,36 +30,9 @@ def parser_array2obj(array) -> Grid:
                        for column in range(array.shape[1])]
                       for row in range(array.shape[0])])
     grid = Grid(array.shape[0], array.shape[1], cells)
-    # for i in range(len(array[0, :])):
-    #     for j in range(len(array[:, 0])):
-    #         cell = Cell(i, j, CellType(array[i, j]))
-    #         grid.cells[i, j] = cell
-    #         if array[i, j] == 1:
-    #             grid.pedestrians.append(Pedestrian(cell))
-    #         elif array[i, j] == 3:
-    #             grid.targets.append(cell)
     grid_valid, error_msg = grid.is_valid()
     assert grid_valid, error_msg
     return grid
-
-
-def parser_obj2array(grid) -> np.ndarray:
-    """
-    This function reads the grid object and converts it into a numpy array with following encoding
-    Array encoding rule
-        0: Empty Cell
-        1. Pedestrian Cell
-        2. Obstacle Cell
-        3. Target Cell
-    All array entries will be ints or floats
-
-    For more details on the class structure please see the report or the Class docstring.
-
-    :param grid: in Grid class format
-    :return: numpy array
-    """
-    array = np.array([[repr(cell.cell_type) for cell in row] for row in grid.cells])
-    return array
 
 
 def scenario_loader():
@@ -116,4 +89,4 @@ def scenario_builder():
     custom_scenario = screen.save_data()
     # Display to the user what they have created
     visualize_state(custom_scenario)
-    return custom_scenario
+    return parser_array2obj(custom_scenario)
