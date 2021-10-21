@@ -25,7 +25,7 @@ class Cell:
         self.row = row
         self.col = col
         self.cell_type = cell_type
-        self.distance_to_target = 0
+        self.distance_to_target = 0 
         self.cost = 0
         self.straight_neighbours = []
         self.diagonal_neighbours = []
@@ -46,6 +46,9 @@ class Pedestrian:
         super().__init__()
         Pedestrian._id_counter += 1
         self.id = Pedestrian._id_counter
+        ##changes
+        #cell.cell_type = CellType.PEDESTRIAN
+        ##
         self.cell = cell
 
     def is_valid(self) -> bool:
@@ -61,9 +64,9 @@ class Pedestrian:
         :param cell:
         :return: None
         """
-        self.cell.cell_type = 0
+        self.cell.cell_type = CellType.EMPTY
         self.cell = cell
-        self.cell.cell_type = 1
+        self.cell.cell_type = CellType.PEDESTRIAN
 
 
 class Grid:
@@ -86,11 +89,17 @@ class Grid:
         if cells is None:
             self.cells = np.array([[Cell(row, column) for column in range(cols)] for row in range(rows)])
             self.assign_neighbours()
+            
         else:
             self.cells = cells
+
         self.pedestrians = np.array([[Pedestrian(cell)
                                       for cell in row if cell.cell_type == 1]
-                                     for row in cells]).flatten()
+                                     for row in self.cells]).flatten()##self.cells not cells
+        self.get_current_state()
+        ##changes
+        self.targets = np.array([])
+        ##
 
     def is_valid(self):
         """
@@ -119,7 +128,7 @@ class Grid:
 
     def change_cell_type(self, row: int, col: int, cell_type: CellType) -> None:
         """
-
+        
         :param row: row index
         :param col: column index
         :param cell_type: the new cell type
@@ -150,6 +159,39 @@ class Grid:
         return array
 
     def assign_neighbours(self):
-        # TODO: Complete the list of neighbours for each cell
-        pass
+        """
+        This function assign a list to each cell. The list contains coordinates of cell's neighbors
+        We divide neighbors into two parts. One part we name it straight_neighbors, 
+        which include horizontal and vertical neighbors. Another includes diagonal neighbors
+
+        :param: grid -> Grid class
+        """
+        for row in range(self.rows):
+            for col in range(self.cols):
+                columnlist = [col-1, col, col+1]
+                rowlist = [row-1, row, row+1]
+                for i in rowlist:
+                    for j in columnlist:
+                        if(i >= 0 and i <= self.rows-1 and j >= 0 and j <= self.cols-1): 
+                            if((i-row)*(j-col)==0):
+                                self.cells[row][col].straight_neighbours.append([i,j])
+                            else:
+                                self.cells[row][col].diagonal_neighbours.append([i,j])
+                self.cells[row][col].straight_neighbours.remove([row, col])
+
+        
+    def get_current_state(self):
+        
+        """
+        This function can read the coordinates of all pedestrians at current step
+        and store it in self.past_states for plotting later.
+        :param: grid -> Grid class
+        """
+        current_state = []
+        for pedestrian in self.pedestrians:
+            current_state.append([pedestrian.cell.row, pedestrian.cell.col])
+        self.past_states.append(current_state)
+            
+        
+        
 
