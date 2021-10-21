@@ -27,8 +27,16 @@ class Cell:
         self.cell_type: CellType = cell_type
         self.distance_to_target: np.float = 0
         self.cost: np.float = 0
-        self.straight_neighbours: np.ndarray = np.array([])
-        self.diagonal_neighbours: np.ndarray = np.array([])
+        self.straight_neighbours = []
+        self.diagonal_neighbours = []
+
+    def get_distance(self, other_cell) -> np.float:
+        """
+        get distance to another cell
+        :param other_cell:
+        :return: euclidean distance as a np.float
+        """
+        return np.sqrt(np.power(self.row - other_cell.row, 2) + np.power(self.col - other_cell.col, 2))
 
     def cost_to_pedestrian(self, ped, r_max: np.float) -> np.float:
         """
@@ -70,6 +78,7 @@ class Pedestrian:
         Pedestrian._id_counter += 1
         self.id: np.int = Pedestrian._id_counter
         self.cell: Cell = cell
+        cell.cell_type = CellType.PEDESTRIAN
 
     def is_valid(self) -> bool:
         """
@@ -121,9 +130,9 @@ class Grid:
         else:
             self.cells = cells
         self.assign_neighbours()
-        self.fill_distances()
         self.pedestrians = [Pedestrian(cell) for row in self.cells
                             for cell in row if cell.cell_type.value == 1]
+        self.get_current_state()
 
     def is_valid(self):
         """
@@ -187,3 +196,37 @@ class Grid:
                 res += f"{cell.cell_type.value} "
             res += "\n"
         return res
+
+    def assign_neighbours(self):
+        """
+        This function assign a list to each cell. The list contains coordinates of cell's neighbors
+        We divide neighbors into two parts. One part we name it straight_neighbors, 
+        which include horizontal and vertical neighbors. Another includes diagonal neighbors
+
+        :param: grid -> Grid class
+        """
+        for row in range(self.rows):
+            for col in range(self.cols):
+                columnlist = [col-1, col, col+1]
+                rowlist = [row-1, row, row+1]
+                for i in rowlist:
+                    for j in columnlist:
+                        if(i >= 0 and i <= self.rows-1 and j >= 0 and j <= self.cols-1): 
+                            if((i-row)*(j-col)==0):
+                                self.cells[row][col].straight_neighbours.append([i,j])
+                            else:
+                                self.cells[row][col].diagonal_neighbours.append([i,j])
+                self.cells[row][col].straight_neighbours.remove([row, col])
+        
+    def get_current_state(self):
+        """
+        This function can read the coordinates of all pedestrians at current step
+        and store it in self.past_states for plotting later.
+        :param: grid -> Grid class
+        """
+        current_state = []
+        for pedestrian in self.pedestrians:
+            current_state.append([pedestrian.cell.row, pedestrian.cell.col])
+        self.past_states.append(current_state)
+            
+
