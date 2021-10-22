@@ -30,7 +30,7 @@ class Cell:
         self.straight_neighbours = []
         self.diagonal_neighbours = []
         self.dijkstra_cost = 0 if self.cell_type.value == CellType.TARGET.value else np.inf
-        self.dijkstra_prev = None # previous node dijkstra
+        self.dijkstra_prev = None  # previous node dijkstra
         self.dijkstra_visit_status = False
 
     def get_distance(self, other_cell) -> np.float:
@@ -136,7 +136,7 @@ class Grid:
         self.pedestrians = [Pedestrian(cell) for row in self.cells
                             for cell in row if cell.cell_type.value == 1]
         self.targets = [cell for row in self.cells
-                            for cell in row if cell.cell_type.value == 3]
+                        for cell in row if cell.cell_type.value == 3]
         self.get_current_state()
 
     def is_valid(self):
@@ -248,10 +248,9 @@ class Grid:
 
         targets = self.targets
         for target in targets:
-            unvisited_cells = []
-            unvisited_cells = [cell for cell in self.cells.flatten() if cell.cell_type.value is not CellType.OBSTACLE.value]
+            unvisited_cells = [cell for cell in self.cells.flatten() if
+                               cell.cell_type.value is not CellType.OBSTACLE.value]
             # Once this list is empty the algorithm is complete
-            visited_cell = []
             while unvisited_cells:
                 cell_to_visit = min(unvisited_cells, key=lambda x: x.dijkstra_cost)
                 for straight_neighbour in cell_to_visit.straight_neighbours:
@@ -266,20 +265,15 @@ class Grid:
                             diagonal_neighbour.dijkstra_cost = dist
                 unvisited_cells.remove(cell_to_visit)
 
-                # unvisited_cells.remove(target)
-
-                # target.dijkstra_cost = 0 # Targets have a distance of 0
-                # for straight_neighbour in target.straight_neighbours:
-                #     if straight_neighbour.dijkstra_cost < target.get_distance(straight_neighbour):
-                #         straight_neighbour.dijkstra_cost = target.get_distance(straight_neighbour)
-                # for diagonal_neighbour in target.straight_neighbours:
-                #     if diagonal_neighbour.dijkstra_cost < target.get_distance(diagonal_neighbour):
-                #         diagonal_neighbour.dijkstra_cost = target.get_distance(diagonal_neighbour)
-
-    def print_dijkstra(self):
-        res = ""
+    def get_dijkstra(self):
+        """
+        :return: Returns the numpy array that contain all the dijkstra costs for each cell.
+        """
+        dijkstra_array = []
         for row_ind, row in enumerate(self.cells):
+            d_row = []
             for col_ind, cell in enumerate(row):
-                res += f"{cell.dijkstra_cost} "
-            res += "\n"
-        print(res)
+                d_row.append(cell.dijkstra_cost)
+            dijkstra_array.append(d_row)
+        dijkstra_array = np.array(dijkstra_array)
+        return dijkstra_array
