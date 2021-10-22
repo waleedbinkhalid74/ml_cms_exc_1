@@ -10,7 +10,6 @@ from grid_structure import Grid, Cell, CellType, Pedestrian
 
 
 def parser_array2obj(array) -> Grid:
-    print(type(array[0, 0]))
     """
     This function converts scenarios in numpy array format the follow the following encoding:
        Array encoding rule

@@ -29,6 +29,8 @@ class Cell:
         self.cost: np.float = 0
         self.straight_neighbours = []
         self.diagonal_neighbours = []
+        self.dijkstra_cost = np.inf  # This is stored temporarily. Once the dijkstra algo is implemented it
+        # will be integrated into the cost of the cell.
 
     def get_distance(self, other_cell) -> np.float:
         """
@@ -201,23 +203,24 @@ class Grid:
         """
         This function assign a list to each cell. The list contains coordinates of cell's neighbors
         We divide neighbors into two parts. One part we name it straight_neighbors, 
-        which include horizontal and vertical neighbors. Another includes diagonal neighbors
+        which include horizontal and vertical neighbors. Another includes diagonal neighbors.
+        This is done in order to cater to speed of pedestrians.
 
         :param: grid -> Grid class
         """
         for row in range(self.rows):
             for col in range(self.cols):
-                columnlist = [col-1, col, col+1]
-                rowlist = [row-1, row, row+1]
+                columnlist = [col - 1, col, col + 1]
+                rowlist = [row - 1, row, row + 1]
                 for i in rowlist:
                     for j in columnlist:
-                        if(i >= 0 and i <= self.rows-1 and j >= 0 and j <= self.cols-1): 
-                            if((i-row)*(j-col)==0):
-                                self.cells[row][col].straight_neighbours.append([i,j])
+                        if (0 <= i <= self.rows - 1) and (j >= 0 and j <= self.cols - 1):
+                            if (i - row) * (j - col) == 0:
+                                self.cells[row][col].straight_neighbours.append(self.cells[i, j])
                             else:
-                                self.cells[row][col].diagonal_neighbours.append([i,j])
-                self.cells[row][col].straight_neighbours.remove([row, col])
-        
+                                self.cells[row][col].diagonal_neighbours.append(self.cells[i, j])
+                self.cells[row][col].straight_neighbours.remove(self.cells[row, col])
+
     def get_current_state(self):
         """
         This function can read the coordinates of all pedestrians at current step
@@ -228,5 +231,17 @@ class Grid:
         for pedestrian in self.pedestrians:
             current_state.append([pedestrian.cell.row, pedestrian.cell.col])
         self.past_states.append(current_state)
-            
 
+    def flood_dijkstra(self):
+        """
+        This function uses dijkstra's algorithm to floor all the cells that are part of the grid with a
+        cost value as defined by the dijkstra's algorithm.
+
+        We need to run the dijkstra's algorithm for each target since we would like to cater to multiple
+        targets as well. Unlike the normal algorithm, in this case we take the target as the source (since we
+        wish the distance at the target to be zero) and the pedestrian as the destination.
+        :return: None
+        """
+        distance = {}
+
+        pass

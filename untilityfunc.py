@@ -33,20 +33,20 @@ def untilityfunc(grid, interactions=False):
         diagonal_neighbours = pedestrian.cell.diagonal_neighbours
         neighbors_indices = straight_neighbours + diagonal_neighbours
 
-        ##flage helps us jump from a loop, if there is a target around a pedestrian
+        # flag helps us jump from a loop, if there is a target around a pedestrian
         flag = True
-        ##define the smallest distance is approximately infinite
+        # define the smallest distance is approximately infinite
         dis_min = 10e6
 
         for x, y in neighbors_indices:
-            ##If any neighbor of a pedestrian is a target, current state remains unchanged
-            if  cells[x][y].cell_type == CellType.TARGET:
+            # If any neighbor of a pedestrian is a target, current state remains unchanged
+            if cells[x][y].cell_type == CellType.TARGET:
                 flag = False
                 break
         
         if flag:
-            for x,y in neighbors_indices:
-                coordx, coordy= None, None
+            for x, y in neighbors_indices:
+                coordx, coordy = None, None
                 for i, j in targets_indices:
                     if interactions:
                         pass
