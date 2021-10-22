@@ -1,6 +1,6 @@
 from grid_structure import *
 
-def untilityfunc(grid, interactions=False):
+def utilityfunc(grid, interactions=False):
 
     """ 
     This function helps us update the cell states
