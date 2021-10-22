@@ -76,12 +76,15 @@ class Pedestrian:
         """
         Initiate the pedestrian with the given position & a unique id.
         :param cell: represents the cell where the pedestrian is standing
+        row & col in a pedestrian serve to store partial step
+        this helps creating more accurate diagonal speed
         """
         super().__init__()
         Pedestrian._id_counter += 1
         self.id: np.int = Pedestrian._id_counter
         self.cell: Cell = cell
-        cell.cell_type = CellType.PEDESTRIAN
+        self.row: np.float = 0
+        self.col: np.float = 0
 
     def is_valid(self) -> bool:
         """
@@ -90,16 +93,25 @@ class Pedestrian:
         """
         return self.cell.cell_type == CellType.PEDESTRIAN
 
-    def move(self, cell: Cell) -> None:
+    def move(self, cell: Cell) -> (np.float, np.float):
         """
         Changes the cell the pedestrian is standing on.
         :param cell:
         :return: None
         """
-        self.cell.cell_type = CellType.EMPTY
-        self.cell = cell
-        if self.cell.cell_type != CellType.TARGET:
-            self.cell.cell_type = CellType.PEDESTRIAN
+        if self.cell.row != cell.row and self.cell.col != cell.col:
+            # diagonal step
+            self.row = self.row + (cell.row - self.cell.row) * 0.7
+            self.col = self.col + (cell.col - self.cell.col) * 0.7
+            full_row = self.row
+            full_col = self.col
+            # remove the potential 1 from self.row & self.col keeping the sign
+            self.row = (self.row % 1.0) * np.sign(self.row)
+            self.col = (self.col % 1.0) * np.sign(self.col)
+            return full_row, full_col
+        else :
+            # straight step
+            return (cell.row - self.cell.row), (cell.col - self.cell.col)
 
     def __str__(self):
         return f"Pedestrians {self.id} standing on {self.cell}"
@@ -215,11 +227,11 @@ class Grid:
         """
         for row in range(self.rows):
             for col in range(self.cols):
-                columnlist = [col - 1, col, col + 1]
-                rowlist = [row - 1, row, row + 1]
-                for i in rowlist:
-                    for j in columnlist:
-                        if (0 <= i <= self.rows - 1) and (j >= 0 and j <= self.cols - 1):
+                column_list = [col - 1, col, col + 1]
+                row_list = [row - 1, row, row + 1]
+                for i in row_list:
+                    for j in column_list:
+                        if (0 <= i <= self.rows - 1) and (0 <= j <= self.cols - 1):
                             if (i - row) * (j - col) == 0:
                                 self.cells[row][col].straight_neighbours.append(self.cells[i, j])
                             else:
@@ -251,6 +263,7 @@ class Grid:
 
     def update_grid(self):
         self.past_states.append(self.to_array())
+        to_remove_peds = []
         for ped_ind, ped in enumerate(self.pedestrians):
             selected_cell = ped.cell
             min_distance = selected_cell.distance_to_target
@@ -258,7 +271,25 @@ class Grid:
                 if nc.distance_to_target < min_distance:
                     selected_cell = nc
                     min_distance = selected_cell.distance_to_target
-            ped.move(selected_cell)
+            for nc_ind, nc in enumerate(ped.cell.diagonal_neighbours):
+                if nc.distance_to_target < min_distance:
+                    selected_cell = nc
+                    min_distance = selected_cell.distance_to_target
+            ped_row, ped_col = ped.move(selected_cell)
+
+            if np.abs(ped_row) >= 1.0:
+                ped.cell.cell_type = CellType.EMPTY
+                ped.cell = self.cells[ped.cell.row + (selected_cell.row - ped.cell.row), ped.cell.col]
+
+            if np.abs(ped_col) >= 1.0:
+                ped.cell.cell_type = CellType.EMPTY
+                ped.cell = self.cells[ped.cell.row, ped.cell.col + (selected_cell.col - ped.cell.col)]
+
+            if ped.cell.cell_type != CellType.TARGET:
+                ped.cell.cell_type = CellType.PEDESTRIAN
+            else:
+                to_remove_peds.append(ped)
+        self.pedestrians = [ped for ped in self.pedestrians if ped not in to_remove_peds]
 
     def flood_dijkstra(self):
         """
@@ -270,7 +301,6 @@ class Grid:
         wish the distance at the target to be zero) and the pedestrian as the destination.
         :return: None
         """
-
         targets = self.targets
         for target in targets:
             unvisited_cells = [cell for cell in self.cells.flatten() if
