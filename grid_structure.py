@@ -122,6 +122,7 @@ class Grid:
 
         # -> This is a list of numpy arrays of all the past states of
         # the grid starting from the initial state
+        self.past_pedestrian_states = []
         self.past_states = []
 
         self.rows: np.int = rows
@@ -132,6 +133,7 @@ class Grid:
         else:
             self.cells = cells
         self.assign_neighbours()
+        self.fill_distances()
         self.pedestrians = [Pedestrian(cell) for row in self.cells
                             for cell in row if cell.cell_type.value == 1]
         self.get_current_state()
@@ -230,7 +232,30 @@ class Grid:
         current_state = []
         for pedestrian in self.pedestrians:
             current_state.append([pedestrian.cell.row, pedestrian.cell.col])
-        self.past_states.append(current_state)
+        self.past_pedestrian_states.append(current_state)
+
+    def fill_distances(self):
+        targets = [cell for row in self.cells
+                   for cell in row if cell.cell_type.value == 3]
+        for row_ind, row in enumerate(self.cells):
+            for col_ind, cell in enumerate(row):
+                min_dist = 1e10
+                for tar_ind, target in enumerate(targets):
+                    distance = cell.get_distance(target)
+                    if cell.get_distance(target) < min_dist:
+                        cell.distance_to_target = distance
+                        min_dist = distance
+
+    def update_grid(self):
+        self.past_states.append(self.to_array())
+        for ped_ind, ped in enumerate(self.pedestrians):
+            selected_cell = ped.cell
+            min_distance = selected_cell.distance_to_target
+            for nc_ind, nc in enumerate(ped.cell.straight_neighbours):
+                if nc.distance_to_target < min_distance:
+                    selected_cell = nc
+                    min_distance = selected_cell.distance_to_target
+            ped.move(selected_cell)
 
     def flood_dijkstra(self):
         """
