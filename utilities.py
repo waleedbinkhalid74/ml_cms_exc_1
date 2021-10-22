@@ -51,9 +51,9 @@ def scenario_loader():
     for i, scenario_file in enumerate(scenario_files):
         print("Scenario", i, ": ", scenario_file)
     scenario_number = int(input("Please select which scenario you wish to load. Enter scenario id:"))
-    filename = "./scenarios" + scenario_files[scenario_number]
+    filename = "./scenarios/" + scenario_files[scenario_number]
     # Open and read the scenario file
-    with open('./scenarios/task_1.csv', newline='') as csvfile:
+    with open(filename, newline='') as csvfile:
         scenario = np.array(list(csv.reader(csvfile))).astype(int)
     # Display the inital state of the scenario
     print("Initial state of the loaded scenario:")

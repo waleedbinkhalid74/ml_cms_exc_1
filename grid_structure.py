@@ -29,8 +29,9 @@ class Cell:
         self.cost: np.float = 0
         self.straight_neighbours = []
         self.diagonal_neighbours = []
-        self.dijkstra_cost = np.inf  # This is stored temporarily. Once the dijkstra algo is implemented it
-        # will be integrated into the cost of the cell.
+        self.dijkstra_cost = 0 if self.cell_type.value == CellType.TARGET.value else np.inf
+        self.dijkstra_prev = None # previous node dijkstra
+        self.dijkstra_visit_status = False
 
     def get_distance(self, other_cell) -> np.float:
         """
@@ -134,6 +135,8 @@ class Grid:
         self.assign_neighbours()
         self.pedestrians = [Pedestrian(cell) for row in self.cells
                             for cell in row if cell.cell_type.value == 1]
+        self.targets = [cell for row in self.cells
+                            for cell in row if cell.cell_type.value == 3]
         self.get_current_state()
 
     def is_valid(self):
@@ -242,6 +245,41 @@ class Grid:
         wish the distance at the target to be zero) and the pedestrian as the destination.
         :return: None
         """
-        distance = {}
 
-        pass
+        targets = self.targets
+        for target in targets:
+            unvisited_cells = []
+            unvisited_cells = [cell for cell in self.cells.flatten() if cell.cell_type.value is not CellType.OBSTACLE.value]
+            # Once this list is empty the algorithm is complete
+            visited_cell = []
+            while unvisited_cells:
+                cell_to_visit = min(unvisited_cells, key=lambda x: x.dijkstra_cost)
+                for straight_neighbour in cell_to_visit.straight_neighbours:
+                    if straight_neighbour.cell_type.value != CellType.OBSTACLE.value:
+                        dist = cell_to_visit.dijkstra_cost + cell_to_visit.get_distance(straight_neighbour)
+                        if dist < straight_neighbour.dijkstra_cost:
+                            straight_neighbour.dijkstra_cost = dist
+                for diagonal_neighbour in cell_to_visit.diagonal_neighbours:
+                    if diagonal_neighbour.cell_type.value != CellType.OBSTACLE.value:
+                        dist = cell_to_visit.dijkstra_cost + cell_to_visit.get_distance(diagonal_neighbour)
+                        if dist < diagonal_neighbour.dijkstra_cost:
+                            diagonal_neighbour.dijkstra_cost = dist
+                unvisited_cells.remove(cell_to_visit)
+
+                # unvisited_cells.remove(target)
+
+                # target.dijkstra_cost = 0 # Targets have a distance of 0
+                # for straight_neighbour in target.straight_neighbours:
+                #     if straight_neighbour.dijkstra_cost < target.get_distance(straight_neighbour):
+                #         straight_neighbour.dijkstra_cost = target.get_distance(straight_neighbour)
+                # for diagonal_neighbour in target.straight_neighbours:
+                #     if diagonal_neighbour.dijkstra_cost < target.get_distance(diagonal_neighbour):
+                #         diagonal_neighbour.dijkstra_cost = target.get_distance(diagonal_neighbour)
+
+    def print_dijkstra(self):
+        res = ""
+        for row_ind, row in enumerate(self.cells):
+            for col_ind, cell in enumerate(row):
+                res += f"{cell.dijkstra_cost} "
+            res += "\n"
+        print(res)
