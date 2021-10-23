@@ -1,4 +1,5 @@
 numpy==1.21.2
 matplotlib==3.4.3
+pygame==2.0.2
 notebook
 
