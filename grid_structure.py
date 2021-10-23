@@ -1,6 +1,8 @@
 from enum import Enum
 import numpy as np
-
+from matplotlib import colors
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 
 class CellType(Enum):
     EMPTY = 0
@@ -129,6 +131,11 @@ class Grid:
         self.rows: np.int = rows
         self.cols: np.int = cols
         self.time_step: np.int = 0
+
+        ## Attributes used for visualization and animation
+        # Standard colormap to homogenize all visualizations
+        self.cmap = colors.ListedColormap(['blue', 'red', 'yellow', 'green'])
+        self.animation = None
         if cells is None:
             self.cells = np.array([[Cell(row, column) for column in range(cols)] for row in range(rows)])
         else:
@@ -140,6 +147,7 @@ class Grid:
         self.targets = [cell for row in self.cells
                         for cell in row if cell.cell_type.value == 3]
         self.get_current_state()
+        self.initial_state = self.cells.copy()
 
     def is_valid(self):
         """
@@ -259,6 +267,23 @@ class Grid:
                     selected_cell = nc
                     min_distance = selected_cell.distance_to_target
             ped.move(selected_cell)
+        # Save the new state
+        self.get_current_state()
+
+    def simulate(self, no_of_steps, dijkstra=False):
+        """
+        This method executes the simulation based on the type of cost function (rudementary or dijkstra assigned)
+        and stores all the states of the grid in an attribute
+
+        :param no_of_steps: How many steps to simulate
+        :param dijkstra: whether the cost should be based on the dijkstra's algorithm
+        :return: List of past states of the scenario
+        """
+        self.past_states = []
+        self.cells = self.initial_state
+        for step in range(no_of_steps):
+            self.update_grid()
+        return self.past_states
 
     def flood_dijkstra(self):
         """
@@ -302,3 +327,28 @@ class Grid:
             dijkstra_array.append(d_row)
         dijkstra_array = np.array(dijkstra_array)
         return dijkstra_array
+
+    def animation_frame(self, i):
+        self.animation.set_array(self.past_states[i])
+        return [self.animation]
+
+    def animate(self):
+        assert len(self.past_states) != 0
+        cmap = self.cmap
+        bounds = [0, 1, 2, 3, 4]
+        norm = colors.BoundaryNorm(bounds, cmap.N)
+        fig, ax = plt.subplots(figsize=(10, 10))
+        self.animation = ax.imshow(self.past_states[0], cmap=cmap, norm=norm)
+        # draw gridlines
+        ax.grid(which='major', axis='both', linestyle='-', color='k', linewidth=2)
+        ax.set_xticks(np.arange(-.5, self.rows, 1))
+        ax.set_yticks(np.arange(-.5, self.cols, 1))
+        fps = 30
+        nSeconds = 10
+        anim = animation.FuncAnimation(
+            fig,
+            self.animation_frame,
+            frames=nSeconds * fps,
+            interval=10000 / fps,  # in ms
+        )
+        plt.show()
