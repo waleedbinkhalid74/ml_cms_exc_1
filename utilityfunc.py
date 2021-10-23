@@ -16,7 +16,6 @@ def utilityfunc(grid, interactions=False):
     """
     if interactions:
         pass
-    grid.fill_distances()
     grid.update_grid()
     grid.get_current_state()
 

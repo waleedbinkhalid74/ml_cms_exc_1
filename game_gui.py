@@ -96,7 +96,7 @@ def main():
                 pygame.draw.rect(SCREEN, WHITE, rects[i][j], 1)
 
         if len(grid.pedestrians) > 0 and active and steps < max_steps and pygame.time.get_ticks() >= delay:
-            grid.update_grid(True)
+            grid.update_grid(dijkstra=True)
             steps += 1
             delay = pygame.time.get_ticks() + seconds_per_step
 

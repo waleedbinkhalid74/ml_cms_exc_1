@@ -1,5 +1,9 @@
 from enum import Enum
 import numpy as np
+from matplotlib import colors
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+from IPython.display import HTML
 
 
 class CellType(Enum):
@@ -95,7 +99,7 @@ class Pedestrian:
         Checks that the cell where the pedestrian is standing is a pedestrian cell.
         :return: true or false
         """
-        return self.cell.cell_type == CellType.PEDESTRIAN
+        return self.cell.cell_type.value == CellType.PEDESTRIAN.value
 
     def move(self, cell: Cell) -> (np.float, np.float):
         """
@@ -146,6 +150,11 @@ class Grid:
         self.rows: np.int = rows
         self.cols: np.int = cols
         self.time_step: np.int = 0
+
+        ## Attributes used for visualization and animation
+        # Standard colormap to homogenize all visualizations
+        self.cmap = colors.ListedColormap(['blue', 'red', 'yellow', 'green'])
+        self.animation = None
         if cells is None:
             self.cells = np.array([[Cell(row, column) for column in range(cols)] for row in range(rows)])
         else:
@@ -157,6 +166,7 @@ class Grid:
         self.targets = [cell for row in self.cells
                         for cell in row if cell.cell_type.value == 3]
         self.get_current_state()
+        self.initial_state = self.cells.copy()
 
     def is_valid(self):
         """
@@ -186,7 +196,6 @@ class Grid:
         update the pedestrians list if necessary
         :param row: row index
         :param col: column index
-        :param cell_type: the new cell type
         :return: None
         """
         old_cell_type = self.cells[row, col].cell_type
@@ -308,7 +317,7 @@ class Grid:
                 min_distance = cell_cost
         return selected_cell
 
-    def update_grid(self, dijkstra):
+    def update_grid(self, dijkstra=False):
         """
         this method updates moves the pedestrians who didn't reach the target yet.
         Pedestrians move horizontally & vertically one step per time step
@@ -346,6 +355,21 @@ class Grid:
                 to_remove_peds.append(ped)
         # Remove pedestrians who reached the target
         self.pedestrians = [ped for ped in self.pedestrians if ped not in to_remove_peds]
+
+    def simulate(self, no_of_steps, dijkstra=False):
+        """
+        This method executes the simulation based on the type of cost function (rudementary or dijkstra assigned)
+        and stores all the states of the grid in an attribute
+
+        :param no_of_steps: How many steps to simulate
+        :param dijkstra: whether the cost should be based on the dijkstra's algorithm
+        :return: List of past states of the scenario
+        """
+        self.past_states = []
+        self.cells = self.initial_state
+        for step in range(no_of_steps):
+            self.update_grid()
+        return self.past_states
 
     def flood_dijkstra(self):
         """
@@ -388,3 +412,36 @@ class Grid:
             dijkstra_array.append(d_row)
         dijkstra_array = np.array(dijkstra_array)
         return dijkstra_array
+
+    def animation_frame(self, i):
+        """
+        This method is a helper method called by the FuncAnimation function to update the animation
+        :param i: frame number
+        :return: updated image
+        """
+        self.animation.set_array(self.past_states[i])
+        return self.animation
+
+    def animate(self):
+        """
+        This method creates an animation of the simulation. Note in order ot create an animation, past states need to exist.
+        :return: anim: Animation object
+        """
+        assert len(self.past_states) != 0
+        cmap = self.cmap
+        bounds = [0, 1, 2, 3, 4]
+        norm = colors.BoundaryNorm(bounds, cmap.N)
+        fig, ax = plt.subplots(figsize=(5, 5))
+        self.animation = ax.imshow(self.past_states[0], cmap=cmap, norm=norm)
+        ax.grid(which='major', axis='both', linestyle='-', color='k', linewidth=2)
+        ax.set_xticks(np.arange(-.5, self.rows, 1))
+        ax.set_yticks(np.arange(-.5, self.cols, 1))
+        # draw gridlines
+        anim = animation.FuncAnimation(
+            fig,
+            self.animation_frame,
+            frames= len(self.past_states), #nSeconds * fps,
+            interval= 10000/30 #10000 / fps,  # in ms
+        )
+        plt.show()
+        return anim

@@ -25,4 +25,5 @@
 10. Pedestrian and object: Qais
 11. Fast Marching Algo reading: Waleed, Qais, Yiming
 12. Testing: TBD
+13. The cost of pedestrians should be accumulated in the normal cost of the cell(?)
 
