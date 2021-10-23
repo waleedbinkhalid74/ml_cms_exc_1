@@ -34,6 +34,7 @@ class Cell:
         self.dijkstra_cost = 0 if self.cell_type.value == CellType.TARGET.value else np.inf
         self.dijkstra_prev = None  # previous node dijkstra
         self.dijkstra_visit_status = False
+        self.path: bool = False   # did a pedestrian pass through this cell, for visualization only
 
     def get_distance(self, other_cell) -> np.float:
         """
@@ -43,7 +44,7 @@ class Cell:
         """
         return np.sqrt(np.power(self.row - other_cell.row, 2) + np.power(self.col - other_cell.col, 2))
 
-    def cost_to_pedestrian(self, ped, r_max: np.float) -> np.float:
+    def cost_to_pedestrian(self, ped, r_max: np.float = 3) -> np.float:
         """
         get cost added by a pedestrian to this cell
         :param ped: A pedestrian to whom to calculate the distance cost
@@ -51,8 +52,11 @@ class Cell:
         :return: the cost calculated based on the distance to the pedestrian
         """
         r: np.float = self.get_distance(ped.cell)
-        if r < r_max:
+
+        if r > r_max:
             return 0
+        elif r == r_max:
+            return 1e10
         else:
             return np.exp(1 / (r * r - r_max * r_max))
 
@@ -78,12 +82,15 @@ class Pedestrian:
         """
         Initiate the pedestrian with the given position & a unique id.
         :param cell: represents the cell where the pedestrian is standing
+        row & col in a pedestrian serve to store partial step
+        this helps creating more accurate diagonal speed
         """
         super().__init__()
         Pedestrian._id_counter += 1
         self.id: np.int = Pedestrian._id_counter
         self.cell: Cell = cell
-        cell.cell_type = CellType.PEDESTRIAN
+        self.row: np.float = 0
+        self.col: np.float = 0
 
     def is_valid(self) -> bool:
         """
@@ -92,16 +99,26 @@ class Pedestrian:
         """
         return self.cell.cell_type == CellType.PEDESTRIAN
 
-    def move(self, cell: Cell) -> None:
+    def move(self, cell: Cell) -> (np.float, np.float):
         """
         Changes the cell the pedestrian is standing on.
-        :param cell:
-        :return: None
+        :param cell: The cell where the pedestrian needs to move
+        :return: a pair of float indicating the distance & direction the pedestrian should move
         """
-        self.cell.cell_type = CellType.EMPTY
-        self.cell = cell
-        if self.cell.cell_type != CellType.TARGET:
-            self.cell.cell_type = CellType.PEDESTRIAN
+        if self.cell.row != cell.row and self.cell.col != cell.col:
+            # diagonal step
+            # the pedestrian only moves 0.7 horizontally & vertically
+            self.row = self.row + (cell.row - self.cell.row) * 0.7
+            self.col = self.col + (cell.col - self.cell.col) * 0.7
+            full_row = self.row
+            full_col = self.col
+            # remove the potential 1 from self.row & self.col keeping the sign
+            self.row = (self.row % 1.0) * np.sign(self.row)
+            self.col = (self.col % 1.0) * np.sign(self.col)
+            return full_row, full_col
+        else :
+            # straight step
+            return (cell.row - self.cell.row), (cell.col - self.cell.col)
 
     def __str__(self):
         return f"Pedestrians {self.id} standing on {self.cell}"
@@ -171,7 +188,7 @@ class Grid:
                     ped.cell.col == col:
                 return ped
 
-    def change_cell_type(self, row: int, col: int, cell_type: CellType) -> None:
+    def change_cell_type(self, row: int, col: int) -> None:
         """
         Updates the type of the cell in the give indices and
         update the pedestrians list if necessary
@@ -180,12 +197,17 @@ class Grid:
         :param cell_type: the new cell type
         :return: None
         """
-        if self.cells[row, col].cell_type == CellType.PEDESTRIAN:
-            np.delete(self.pedestrians, self.__find_pedestrian(row, col))
-        elif cell_type == CellType.PEDESTRIAN:
-            self.pedestrians = np.append(self.pedestrians, Pedestrian(self.cells[row, col]))
+        old_cell_type = self.cells[row, col].cell_type
+        new_cell_type = (old_cell_type.value + 1) % 4
 
-        self.cells[row, col].cell_type = cell_type
+        if old_cell_type.value == 1:
+            self.pedestrians = [ped for ped in self.pedestrians if not ped.cell.row == row or not ped.cell.col == col]
+        elif new_cell_type == 1:
+            self.pedestrians.append(Pedestrian(self.cells[row, col]))
+        self.cells[row, col].cell_type = CellType(new_cell_type)
+
+        if old_cell_type.value == 3 or new_cell_type == 3:
+            self.fill_distances()
 
     def to_array(self) -> np.ndarray:
         """
@@ -223,11 +245,11 @@ class Grid:
         """
         for row in range(self.rows):
             for col in range(self.cols):
-                columnlist = [col - 1, col, col + 1]
-                rowlist = [row - 1, row, row + 1]
-                for i in rowlist:
-                    for j in columnlist:
-                        if (0 <= i <= self.rows - 1) and (j >= 0 and j <= self.cols - 1):
+                column_list = [col - 1, col, col + 1]
+                row_list = [row - 1, row, row + 1]
+                for i in row_list:
+                    for j in column_list:
+                        if (0 <= i <= self.rows - 1) and (0 <= j <= self.cols - 1):
                             if (i - row) * (j - col) == 0:
                                 self.cells[row][col].straight_neighbours.append(self.cells[i, j])
                             else:
@@ -257,18 +279,72 @@ class Grid:
                         cell.distance_to_target = distance
                         min_dist = distance
 
+    def pedestrians_costs(self, p1: Pedestrian, neighbor: Cell) -> np.float:
+        """
+        calculate the sum of all other pedestrians on the neighbor cell
+        :param p1:
+        :param neighbor:
+        :return:
+        """
+        costs = 0
+        for ind, p2 in enumerate(self.pedestrians):
+            if p2.id != p1.id:
+                costs += neighbor.cost_to_pedestrian(p2)
+        return costs
+
     def update_grid(self):
+        """
+        this method updates moves the pedestrians who didn't reach the target yet.
+        Pedestrians move horizontally & vertically one step per time step
+        While they move 0.7 of a step diagonally
+        Details on how that is calculated can be found in Pedestrian.move
+        :return: None
+        """
+        # save the current state of the grid
         self.past_states.append(self.to_array())
+        # pedestrians who reached the target
+        to_remove_peds = []
         for ped_ind, ped in enumerate(self.pedestrians):
             selected_cell = ped.cell
-            min_distance = selected_cell.distance_to_target
+            min_distance = selected_cell.distance_to_target + self.pedestrians_costs(ped, ped.cell)
+            # Find best cell according to distance to target
+            # TODO consider cost to pedestrians or other parameters
+            # TODO maybe this function be updated to have the kind of distance as a parameter
+
             for nc_ind, nc in enumerate(ped.cell.straight_neighbours):
-                if nc.distance_to_target < min_distance:
+                pc = self.pedestrians_costs(ped, nc)
+                if nc.distance_to_target + self.pedestrians_costs(ped, nc) < min_distance:
                     selected_cell = nc
-                    min_distance = selected_cell.distance_to_target
-            ped.move(selected_cell)
-        # Save the new state
-        self.get_current_state()
+                    min_distance = selected_cell.distance_to_target + pc
+            for nc_ind, nc in enumerate(ped.cell.diagonal_neighbours):
+                pc = self.pedestrians_costs(ped, nc)
+                if nc.distance_to_target + self.pedestrians_costs(ped, nc) < min_distance:
+                    selected_cell = nc
+
+                    min_distance = selected_cell.distance_to_target + pc
+
+            # Get the distance the pedestrian should move
+            ped_row, ped_col = ped.move(selected_cell)
+
+            # Check if the pedestrian should move a full cell vertically
+            if np.abs(ped_row) >= 1.0:
+                ped.cell.cell_type = CellType.EMPTY
+                ped.cell.path = True
+                ped.cell = self.cells[ped.cell.row + (selected_cell.row - ped.cell.row), ped.cell.col]
+
+            # Check if the pedestrian should move a full cell horizontally
+            if np.abs(ped_col) >= 1.0:
+                ped.cell.cell_type = CellType.EMPTY
+                ped.cell.path = True
+                ped.cell = self.cells[ped.cell.row, ped.cell.col + (selected_cell.col - ped.cell.col)]
+
+            # If a target is reached remove the pedestrian, otherwise update the new cell
+            if ped.cell.cell_type != CellType.TARGET:
+                ped.cell.cell_type = CellType.PEDESTRIAN
+            else:
+                to_remove_peds.append(ped)
+        # Remove pedestrians who reached the target
+        self.pedestrians = [ped for ped in self.pedestrians if ped not in to_remove_peds]
 
     def simulate(self, no_of_steps, dijkstra=False):
         """
@@ -295,7 +371,6 @@ class Grid:
         wish the distance at the target to be zero) and the pedestrian as the destination.
         :return: None
         """
-
         targets = self.targets
         for target in targets:
             unvisited_cells = [cell for cell in self.cells.flatten() if
