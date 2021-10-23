@@ -3,6 +3,7 @@ import numpy as np
 from matplotlib import colors
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
+from IPython.display import HTML
 
 class CellType(Enum):
     EMPTY = 0
@@ -97,7 +98,7 @@ class Pedestrian:
         Checks that the cell where the pedestrian is standing is a pedestrian cell.
         :return: true or false
         """
-        return self.cell.cell_type == CellType.PEDESTRIAN
+        return self.cell.cell_type.value == CellType.PEDESTRIAN.value
 
     def move(self, cell: Cell) -> (np.float, np.float):
         """
@@ -404,26 +405,34 @@ class Grid:
         return dijkstra_array
 
     def animation_frame(self, i):
+        """
+        This method is a helper method called by the FuncAnimation function to update the animation
+        :param i: frame number
+        :return: updated image
+        """
         self.animation.set_array(self.past_states[i])
-        return [self.animation]
+        return self.animation
 
     def animate(self):
+        """
+        This method creates an animation of the simulation. Note in order ot create an animation, past states need to exist.
+        :return: anim: Animation object
+        """
         assert len(self.past_states) != 0
         cmap = self.cmap
         bounds = [0, 1, 2, 3, 4]
         norm = colors.BoundaryNorm(bounds, cmap.N)
-        fig, ax = plt.subplots(figsize=(10, 10))
+        fig, ax = plt.subplots(figsize=(5, 5))
         self.animation = ax.imshow(self.past_states[0], cmap=cmap, norm=norm)
-        # draw gridlines
         ax.grid(which='major', axis='both', linestyle='-', color='k', linewidth=2)
         ax.set_xticks(np.arange(-.5, self.rows, 1))
         ax.set_yticks(np.arange(-.5, self.cols, 1))
-        fps = 30
-        nSeconds = 10
+        # draw gridlines
         anim = animation.FuncAnimation(
             fig,
             self.animation_frame,
-            frames=nSeconds * fps,
-            interval=10000 / fps,  # in ms
+            frames= len(self.past_states), #nSeconds * fps,
+            interval= 10000/30 #10000 / fps,  # in ms
         )
         plt.show()
+        return anim
