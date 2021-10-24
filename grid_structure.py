@@ -159,13 +159,13 @@ class Grid:
         else:
             self.cells = cells
         self.assign_neighbours()
-        self.fill_distances()
+
         self.pedestrians = [Pedestrian(cell) for row in self.cells
                             for cell in row if cell.cell_type.value == 1]
-        self.targets = [cell for row in self.cells
-                        for cell in row if cell.cell_type.value == 3]
         self.get_current_state()
         self.initial_state = self.cells.copy()
+        self.fill_distances() # Fills the cells with the cost as a parameter to the distance to the target
+        self.flood_dijkstra() # Fills the cells with the cost as per the dijkstra's algorithm
 
     def is_valid(self):
         """
@@ -205,10 +205,13 @@ class Grid:
             self.pedestrians = [ped for ped in self.pedestrians if not ped.cell.row == row or not ped.cell.col == col]
         elif new_cell_type == 1:
             self.pedestrians.append(Pedestrian(self.cells[row, col]))
+
+
         self.cells[row, col].cell_type = CellType(new_cell_type)
 
         if old_cell_type.value == 3 or new_cell_type == 3:
             self.fill_distances()
+            self.flood_dijkstra()
 
     def to_array(self) -> np.ndarray:
         """
@@ -372,12 +375,14 @@ class Grid:
         wish the distance at the target to be zero) and the pedestrian as the destination.
         :return: None
         """
-        targets = self.targets
+        targets = [cell for row in self.cells
+                        for cell in row if cell.cell_type.value == 3]
+
         for target in targets:
             unvisited_cells = [cell for cell in self.cells.flatten() if
                                cell.cell_type.value is not CellType.OBSTACLE.value]
             # Once this list is empty the algorithm is complete
-            while unvisited_cells:
+            while unvisited_cells: # While the univisited_cells is not empty
                 cell_to_visit = min(unvisited_cells, key=lambda x: x.dijkstra_cost)
                 for straight_neighbour in cell_to_visit.straight_neighbours:
                     if straight_neighbour.cell_type.value != CellType.OBSTACLE.value:

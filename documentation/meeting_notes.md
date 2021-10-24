@@ -16,14 +16,26 @@
 ~~2. Class structures: Qais~~
 ~~3. Parser csv, txt: Waleed~~
 ~~5. Converter from class grid to animatable grid: Waleed~~
-4. Animation (Initial figures): Waleed
-5. Divide neighbours into diagonal and straight: Yiming
-6. Keep track of time by grid attribute: Yiming
-7. Implement update rule: Yiming
-8. Implementation of pedestrian repulsion: Yiming
-9. Dijkstra algorithm: Waleed
-10. Pedestrian and object: Qais
-11. Fast Marching Algo reading: Waleed, Qais, Yiming
-12. Testing: TBD
-13. The cost of pedestrians should be accumulated in the normal cost of the cell(?)
-
+~~4. Animation (Initial figures): Waleed~~
+~~5. Divide neighbours into diagonal and straight: Yiming~~
+~~6. Keep track of time by grid attribute: Yiming~~
+~~7. Implement update rule: Yiming~~
+~~8. Implementation of pedestrian repulsion: Yiming~~
+~~9. Dijkstra algorithm: Waleed~~
+~~10. Pedestrian and object: Qais~~
+~~11. The cost of pedestrians should be accumulated in the normal cost of the cell(?)~~
+12. 
+13. Fast Marching Algo reading: Waleed, Qais, Yiming
+14. Documentation: Waleed, Qais
+    1. Explaination of pedestrian interaction: Qais
+~~2. Explaination of dijkstra~~
+    2. Explaination of rudementary obstacle avoidance: Waleed
+    3. Explaination of update rule: Qais
+    4. Explaination of new GUI: Qais
+    5. Explaination of animator: Waleed
+    6. Testing: Conduct RiMEA test 1 and 4 with documentation and explaination in Latex and notebook: Yiming
+    7. Testing: Conduct RiMEA test 6 and 7 with documentation and explaination in Latex and notebook: Waleed
+15. Check animation bug in RiMEA_1.csv
+16. Integrate new GUI to scenario_builder: Qais
+17. Run tasks 1-4 and document in notebook and latex
+18. UML diagram of the class structure: Yiming
