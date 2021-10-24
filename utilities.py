@@ -78,15 +78,4 @@ def scenario_builder():
     """
     # Get size of grid from user
     rows, cols = tuple([eval(x) for x in input("Enter the size of the grid in the format: rows, columns: ").split(',')])
-    app = QApplication(sys.argv)
-    # Create GUI object
-    screen = GUI(rows, cols)
-    # Display the screen
-    screen.display()
-    screen.show()
-    app.exec_()
-    # Extract the state of the GUI at the time it was closed
-    custom_scenario = screen.save_data()
-    # Display to the user what they have created
-    visualize_state(custom_scenario)
-    return parser_array2obj(custom_scenario)
+    return Grid(rows, cols)

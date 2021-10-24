@@ -44,7 +44,10 @@ class Cell:
         :param other_cell:
         :return: euclidean distance as a np.float
         """
-        return np.sqrt(np.power(self.row - other_cell.row, 2) + np.power(self.col - other_cell.col, 2))
+        if self.cell_type.value == 2:
+            return np.inf
+        else:
+            return np.sqrt(np.power(self.row - other_cell.row, 2) + np.power(self.col - other_cell.col, 2))
 
     def cost_to_pedestrian(self, ped, r_max: np.float = 3) -> np.float:
         """
@@ -276,11 +279,11 @@ class Grid:
                    for cell in row if cell.cell_type.value == 3]
         for row_ind, row in enumerate(self.cells):
             for col_ind, cell in enumerate(row):
-                min_dist = 1e10
+                min_dist = np.inf
                 for tar_ind, target in enumerate(targets):
                     distance = cell.get_distance(target)
                     if cell.get_distance(target) < min_dist:
-                        cell.distance_to_target += distance
+                        cell.distance_to_target = distance
                         min_dist = distance
 
     def __pedestrians_costs(self, p1: Pedestrian, neighbor: Cell) -> np.float:
@@ -296,26 +299,25 @@ class Grid:
                 costs += neighbor.cost_to_pedestrian(p2)
         return costs
 
-    def __get_distance(self, dijkstra, ped, cell):
+    def __get_cell_cost(self, dijkstra, ped, cell):
         pc = self.__pedestrians_costs(ped, cell)
         if dijkstra:
             return cell.dijkstra_cost + pc
         else:
             return cell.distance_to_target + pc
 
-
     def __choose_best_neighbor(self, dijkstra, ped):
         selected_cell = ped.cell
-        min_distance = self.__get_distance(dijkstra, ped, selected_cell)
+        min_distance = self.__get_cell_cost(dijkstra, ped, selected_cell)
         # TODO consider cost to pedestrians or other parameters
         # TODO maybe this function be updated to have the kind of distance as a parameter
         for nc_ind, nc in enumerate(ped.cell.straight_neighbours):
-            cell_cost = self.__get_distance(dijkstra, ped, nc)
+            cell_cost = self.__get_cell_cost(dijkstra, ped, nc)
             if cell_cost < min_distance:
                 selected_cell = nc
                 min_distance = cell_cost
         for nc_ind, nc in enumerate(ped.cell.diagonal_neighbours):
-            cell_cost = self.__get_distance(dijkstra, ped, nc)
+            cell_cost = self.__get_cell_cost(dijkstra, ped, nc)
             if cell_cost < min_distance:
                 selected_cell = nc
                 min_distance = cell_cost
@@ -392,7 +394,7 @@ class Grid:
             unvisited_cells = [cell for cell in self.cells.flatten() if
                                cell.cell_type.value is not CellType.OBSTACLE.value]
             # Once this list is empty the algorithm is complete
-            while unvisited_cells: # While the univisited_cells is not empty
+            while unvisited_cells: # While the unvisited_cells is not empty
                 cell_to_visit = min(unvisited_cells, key=lambda x: x.dijkstra_cost)
                 for straight_neighbour in cell_to_visit.straight_neighbours:
                     if straight_neighbour.cell_type.value != CellType.OBSTACLE.value:
