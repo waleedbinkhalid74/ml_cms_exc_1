@@ -1,9 +1,9 @@
 from enum import Enum
+
+import matplotlib.animation as animation
+import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import colors
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
-from IPython.display import HTML
 
 
 class CellType(Enum):
@@ -36,7 +36,7 @@ class Cell:
         self.dijkstra_cost = 0 if self.cell_type.value == CellType.TARGET.value else np.inf
         self.dijkstra_prev = None  # previous node dijkstra
         self.dijkstra_visit_status = False
-        self.path: bool = False   # did a pedestrian pass through this cell, for visualization only
+        self.path: bool = False  # did a pedestrian pass through this cell, for visualization only
 
     def get_distance(self, other_cell) -> np.float:
         """
@@ -121,7 +121,7 @@ class Pedestrian:
             self.row = (self.row % 1.0) * np.sign(self.row)
             self.col = (self.col % 1.0) * np.sign(self.col)
             return full_row, full_col
-        else :
+        else:
             # straight step
             return (cell.row - self.cell.row), (cell.col - self.cell.col)
 
@@ -168,8 +168,8 @@ class Grid:
                             for cell in row if cell.cell_type.value == 1]
         self.get_current_state()
         self.initial_state = self.cells.copy()
-        self.fill_distances() # Fills the cells with the cost as a parameter to the distance to the target
-        self.flood_dijkstra() # Fills the cells with the cost as per the dijkstra's algorithm
+        self.fill_distances()  # Fills the cells with the cost as a parameter to the distance to the target
+        self.flood_dijkstra()  # Fills the cells with the cost as per the dijkstra's algorithm
 
     def is_valid(self):
         """
@@ -208,7 +208,6 @@ class Grid:
             self.pedestrians = [ped for ped in self.pedestrians if not ped.cell.row == row or not ped.cell.col == col]
         elif new_cell_type == 1:
             self.pedestrians.append(Pedestrian(self.cells[row, col]))
-
 
         self.cells[row, col].cell_type = CellType(new_cell_type)
 
@@ -388,13 +387,13 @@ class Grid:
         :return: None
         """
         targets = [cell for row in self.cells
-                        for cell in row if cell.cell_type.value == 3]
+                   for cell in row if cell.cell_type.value == 3]
 
         for target in targets:
             unvisited_cells = [cell for cell in self.cells.flatten() if
                                cell.cell_type.value is not CellType.OBSTACLE.value]
             # Once this list is empty the algorithm is complete
-            while unvisited_cells: # While the unvisited_cells is not empty
+            while unvisited_cells:  # While the unvisited_cells is not empty
                 cell_to_visit = min(unvisited_cells, key=lambda x: x.dijkstra_cost)
                 for straight_neighbour in cell_to_visit.straight_neighbours:
                     if straight_neighbour.cell_type.value != CellType.OBSTACLE.value:
@@ -448,8 +447,8 @@ class Grid:
         anim = animation.FuncAnimation(
             fig,
             self.animation_frame,
-            frames= len(self.past_states), #nSeconds * fps,
-            interval= 10000/30 #10000 / fps,  # in ms
+            frames=len(self.past_states),  # nSeconds * fps,
+            interval=10000 / 30  # 10000 / fps,  # in ms
         )
         plt.show()
         return anim

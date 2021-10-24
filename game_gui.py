@@ -1,11 +1,12 @@
-import pygame
-import sys
-from grid_structure import *
-import utilities as ut
 import ctypes
 
+import pygame
 
-def create_button(screen, horz_pos:int, vert_pos:int, width:int, height:int, text: str, color: tuple, text_color:tuple):
+from grid_structure import *
+
+
+def create_button(screen, horz_pos: int, vert_pos: int, width: int, height: int, text: str, button_color: tuple,
+                  text_color: tuple):
     """
     This function creates a pygame rectangle with text on top.
     The rectangle can be used a button
@@ -16,15 +17,15 @@ def create_button(screen, horz_pos:int, vert_pos:int, width:int, height:int, tex
     :param width: the width of the button in pixels
     :param height: the height of the button in pixels
     :param text: the text to display on the button
-    :param color: the color of the button
-    :param text_color: the color of text
+    :param button_color: the color of the button as an RPG tuple
+    :param text_color: the color of text as an RPG tuple
     :return:
     """
     button = pygame.Rect(horz_pos, vert_pos, width, height)
-    text_surface_object = pygame.font.SysFont("Arial", height // 2).render(
+    text_surface_object = pygame.font.SysFont('Arial', height // 2).render(
         text, True, text_color)
     text_rect = text_surface_object.get_rect(center=button.center)
-    pygame.draw.rect(screen, color, button)  # draw button
+    pygame.draw.rect(screen, button_color, button)  # draw button
     screen.blit(text_surface_object, text_rect)
     return button
 
@@ -98,10 +99,12 @@ def start_game_gui(grid: Grid, max_steps: int = 200, step_time: int = 750, dijks
     steps = 0
     simulation_running = False
     simulation_start = False
+    simulation_done = False
     simulation_start_time = 0
     simulation_pause_time = 0
     simulation_stoppage_time = 0
     step_waiting_time = 0
+    simulation_total_time = 0
 
     # Game loop
     game_gui_running = True
@@ -125,15 +128,23 @@ def start_game_gui(grid: Grid, max_steps: int = 200, step_time: int = 750, dijks
         # Simulate one step
         if grid.pedestrians and simulation_running \
                 and steps < max_steps and pygame.time.get_ticks() >= step_waiting_time:
-            grid.update_grid()
+            grid.update_grid(dijkstra=dijkstra)
             steps += 1
             step_waiting_time = pygame.time.get_ticks() + step_time
 
-        # Check if the simulation is done
+        # # Check if the simulation is done
+        # if len(grid.pedestrians) == 0 and simulation_running:
+        #     simulation_running = False
+        #     show_results = True
+
         if len(grid.pedestrians) == 0 and simulation_running:
             simulation_total_time = (pygame.time.get_ticks() - simulation_start_time) - simulation_stoppage_time
-            print(f"Simulation done. Time = {simulation_total_time}    steps = {steps}")
+            create_button(screen,
+                          window_width // 8, window_height + 10,
+                          6 * window_width // 8, block_size * 3 // 2,
+                          f"Time = {simulation_total_time / 1000} seconds     steps = {steps}", green, black)
             simulation_running = False
+            simulation_done = True
 
         # Handle events
         for event in pygame.event.get():
@@ -141,49 +152,40 @@ def start_game_gui(grid: Grid, max_steps: int = 200, step_time: int = 750, dijks
             # Close button
             if event.type == pygame.QUIT:
                 pygame.quit()
-                return
+                if simulation_done:
+                    return simulation_total_time, steps
+                else:
+                    return (pygame.time.get_ticks() - simulation_start_time) - simulation_stoppage_time, steps
 
             # Handle pressing a button
             if event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_pos = event.pos  # gets mouse position
 
                 # Start simulation
-                if start_button.collidepoint(mouse_pos):
+                if not simulation_done and start_button.collidepoint(mouse_pos):
                     simulation_running = True
                     if not simulation_start:
                         simulation_start_time = pygame.time.get_ticks()
+                    else:
+                        simulation_stoppage_time += pygame.time.get_ticks() - simulation_pause_time
                     simulation_start = True
-                    simulation_stoppage_time += pygame.time.get_ticks() - simulation_pause_time
 
                 # Pause simulation
-                if pause_button.collidepoint(mouse_pos):
+                if not simulation_done and pause_button.collidepoint(mouse_pos):
                     simulation_running = False
                     simulation_pause_time = pygame.time.get_ticks()
 
                 # Handle pressing on cells (Update cell type)
                 for i in range(grid.rows):
                     for j in range(grid.cols):
-                        if not simulation_running and \
+                        if not simulation_running and not simulation_done and \
                                 rects[i][j].collidepoint(mouse_pos):
                             grid.change_cell_type(i, j)
 
         pygame.display.update()
 
-#
-# def main():
-#     some_grid = Grid(10, 10)
-#     game_gui(some_grid)
-#
-#
-# # TODO:
-# #   1. integrate GUI to the UI & Structure the code
-# #   2. Try smaller sizes & make BLOCK_SIZE proportional to the number of cells & screen pixels
-# #   3. Fix custom scenario bug
-# #   4. Make distance algorithm a parameter
-# #   5. Load a complete scenario
-# #   6. Track & Show Number of steps & Real time
-#
-#
-#
-# if __name__ == '__main__':
-#     main()
+# TODO:
+#   1. Load a complete scenario
+#   2. Track & Show Number of steps & Real time
+#   3. Add cost to obstacles when not using dijkstra
+#   4. Default values for initialization questions
