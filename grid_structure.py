@@ -29,8 +29,8 @@ class Cell:
         self.row: np.int = row
         self.col: np.int = col
         self.cell_type: CellType = cell_type
-        self.distance_to_target: np.float = 0
-        self.cost: np.float = 0
+        self.distance_to_target: np.float = np.inf if self.cell_type.value == CellType.OBSTACLE.value else 0
+        # self.cost: np.float = np.inf if self.cell_type.value == CellType.OBSTACLE.value else 0
         self.straight_neighbours = []
         self.diagonal_neighbours = []
         self.dijkstra_cost = 0 if self.cell_type.value == CellType.TARGET.value else np.inf
@@ -277,7 +277,7 @@ class Grid:
                 for tar_ind, target in enumerate(targets):
                     distance = cell.get_distance(target)
                     if cell.get_distance(target) < min_dist:
-                        cell.distance_to_target = distance
+                        cell.distance_to_target += distance
                         min_dist = distance
 
     def __pedestrians_costs(self, p1: Pedestrian, neighbor: Cell) -> np.float:
@@ -298,7 +298,8 @@ class Grid:
         if dijkstra:
             return cell.dijkstra_cost + pc
         else:
-            cell.distance_to_target + pc
+            return cell.distance_to_target + pc
+
 
     def __choose_best_neighbor(self, dijkstra, ped):
         selected_cell = ped.cell
@@ -368,7 +369,7 @@ class Grid:
         self.past_states = []
         self.cells = self.initial_state
         for step in range(no_of_steps):
-            self.update_grid()
+            self.update_grid(dijkstra=dijkstra)
         return self.past_states
 
     def flood_dijkstra(self):

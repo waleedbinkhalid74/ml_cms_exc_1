@@ -15,16 +15,6 @@ colors = [WHITE, RED, YELLOW, GREEN]
 BLOCK_SIZE = 15  # Set the size of the grid block
 
 
-# def create_button(window_width, window_height, text, horz_pos, color):
-#     button = pygame.Rect(horz_pos, window_height + 10, window_width // 6, 40)
-#     pygame.draw.rect(SCREEN, color, button)  # draw button
-#     text_surface_object = pygame.font.SysFont("Arial", 20).render(
-#             text, True, BLACK)
-#     text_rect = text_surface_object.get_rect(center=button.center)
-#     SCREEN.blit(text_surface_object, text_rect)
-#     return button
-
-
 def create_button_pure(horz_pos, vert_pos, width, height, text, color):
     button = pygame.Rect(horz_pos, vert_pos, width, height)
     text_surface_object = pygame.font.SysFont("Arial", 20).render(
@@ -96,7 +86,7 @@ def main():
                 pygame.draw.rect(SCREEN, WHITE, rects[i][j], 1)
 
         if len(grid.pedestrians) > 0 and active and steps < max_steps and pygame.time.get_ticks() >= delay:
-            grid.update_grid(dijkstra=True)
+            grid.update_grid()
             steps += 1
             delay = pygame.time.get_ticks() + seconds_per_step
 
