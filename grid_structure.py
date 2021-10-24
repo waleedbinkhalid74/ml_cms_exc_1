@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from IPython.display import HTML
 
+
 class CellType(Enum):
     EMPTY = 0
     PEDESTRIAN = 1
@@ -195,7 +196,6 @@ class Grid:
         update the pedestrians list if necessary
         :param row: row index
         :param col: column index
-        :param cell_type: the new cell type
         :return: None
         """
         old_cell_type = self.cells[row, col].cell_type
@@ -283,7 +283,7 @@ class Grid:
                         cell.distance_to_target = distance
                         min_dist = distance
 
-    def pedestrians_costs(self, p1: Pedestrian, neighbor: Cell) -> np.float:
+    def __pedestrians_costs(self, p1: Pedestrian, neighbor: Cell) -> np.float:
         """
         calculate the sum of all other pedestrians on the neighbor cell
         :param p1:
@@ -296,7 +296,31 @@ class Grid:
                 costs += neighbor.cost_to_pedestrian(p2)
         return costs
 
-    def update_grid(self):
+    def __get_distance(self, dijkstra, ped, cell):
+        pc = self.__pedestrians_costs(ped, cell)
+        if dijkstra:
+            return cell.dijkstra_cost + pc
+        else:
+            cell.distance_to_target + pc
+
+    def __choose_best_neighbor(self, dijkstra, ped):
+        selected_cell = ped.cell
+        min_distance = self.__get_distance(dijkstra, ped, selected_cell)
+        # TODO consider cost to pedestrians or other parameters
+        # TODO maybe this function be updated to have the kind of distance as a parameter
+        for nc_ind, nc in enumerate(ped.cell.straight_neighbours):
+            cell_cost = self.__get_distance(dijkstra, ped, nc)
+            if cell_cost < min_distance:
+                selected_cell = nc
+                min_distance = cell_cost
+        for nc_ind, nc in enumerate(ped.cell.diagonal_neighbours):
+            cell_cost = self.__get_distance(dijkstra, ped, nc)
+            if cell_cost < min_distance:
+                selected_cell = nc
+                min_distance = cell_cost
+        return selected_cell
+
+    def update_grid(self, dijkstra=False):
         """
         this method updates moves the pedestrians who didn't reach the target yet.
         Pedestrians move horizontally & vertically one step per time step
@@ -309,23 +333,7 @@ class Grid:
         # pedestrians who reached the target
         to_remove_peds = []
         for ped_ind, ped in enumerate(self.pedestrians):
-            selected_cell = ped.cell
-            min_distance = selected_cell.distance_to_target + self.pedestrians_costs(ped, ped.cell)
-            # Find best cell according to distance to target
-            # TODO consider cost to pedestrians or other parameters
-            # TODO maybe this function be updated to have the kind of distance as a parameter
-
-            for nc_ind, nc in enumerate(ped.cell.straight_neighbours):
-                pc = self.pedestrians_costs(ped, nc)
-                if nc.distance_to_target + self.pedestrians_costs(ped, nc) < min_distance:
-                    selected_cell = nc
-                    min_distance = selected_cell.distance_to_target + pc
-            for nc_ind, nc in enumerate(ped.cell.diagonal_neighbours):
-                pc = self.pedestrians_costs(ped, nc)
-                if nc.distance_to_target + self.pedestrians_costs(ped, nc) < min_distance:
-                    selected_cell = nc
-
-                    min_distance = selected_cell.distance_to_target + pc
+            selected_cell = self.__choose_best_neighbor(dijkstra, ped)
 
             # Get the distance the pedestrian should move
             ped_row, ped_col = ped.move(selected_cell)
@@ -339,7 +347,8 @@ class Grid:
             # Check if the pedestrian should move a full cell horizontally
             if np.abs(ped_col) >= 1.0:
                 ped.cell.cell_type = CellType.EMPTY
-                ped.cell.path = True
+                if np.abs(ped_row) < 1.0:
+                    ped.cell.path = True
                 ped.cell = self.cells[ped.cell.row, ped.cell.col + (selected_cell.col - ped.cell.col)]
 
             # If a target is reached remove the pedestrian, otherwise update the new cell
