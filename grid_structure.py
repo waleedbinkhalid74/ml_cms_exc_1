@@ -49,7 +49,7 @@ class Cell:
         else:
             return np.sqrt(np.power(self.row - other_cell.row, 2) + np.power(self.col - other_cell.col, 2))
 
-    def cost_to_pedestrian(self, ped, r_max: np.float = 3) -> np.float:
+    def cost_to_pedestrian(self, ped, r_max: np.float = 1) -> np.float:
         """
         get cost added by a pedestrian to this cell
         :param ped: A pedestrian to whom to calculate the distance cost
@@ -366,9 +366,10 @@ class Grid:
                     ped.cell.path = True
                 ped.cell = self.cells[ped.cell.row, ped.cell.col + (selected_cell.col - ped.cell.col)]
 
-            # If a target is reached remove the pedestrian, otherwise update the new cell
+            # If a target is reached remove the pedestrian provided the targets are absorbing,
+            # otherwise update the new cell
             if absorbing_targets:
-                if ped.cell.cell_type != CellType.TARGET:
+                if ped.cell.cell_type.value != CellType.TARGET.value:
                     ped.cell.cell_type = CellType.PEDESTRIAN
                 else:
                     to_remove_peds.append(ped)
@@ -392,6 +393,7 @@ class Grid:
         self.cells = self.initial_state
         for step in range(no_of_steps):
             self.update_grid(dijkstra=dijkstra, absorbing_targets=absorbing_targets)
+        print("DONEDONEDONE")
         return self.past_states
 
     def flood_dijkstra(self):
