@@ -39,9 +39,13 @@ def start_game_gui(grid: Grid, max_steps: int = 200, step_time: int = 750, dijks
     :return: None
     """
     # Get monitor parameters
-    user32 = ctypes.windll.user32
-    monitor_width, monitor_height = user32.GetSystemMetrics(0), user32.GetSystemMetrics(1)
+    # user32 = ctypes.windll.user32
+    # monitor_width, monitor_height = user32.GetSystemMetrics(0), user32.GetSystemMetrics(1)
+    # Start pygame
+    pygame.init()
 
+    infoObject = pygame.display.Info()
+    monitor_width, monitor_height = infoObject.current_w, infoObject.current_h
     # Define essential colors
     black = (0, 0, 0)
     white = (200, 200, 200)
@@ -61,8 +65,6 @@ def start_game_gui(grid: Grid, max_steps: int = 200, step_time: int = 750, dijks
     row_edge = side_edges // 2 if grid.rows >= 20 else (window_height - (grid.rows + 1) * block_size) // 2
     col_edge = side_edges // 2 if grid.cols >= 20 else (window_width - (grid.cols + 1) * block_size) // 2
 
-    # Start pygame
-    pygame.init()
 
     # Set game window
     screen = pygame.display.set_mode((window_width, window_height + 60))

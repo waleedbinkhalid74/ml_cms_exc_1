@@ -208,6 +208,16 @@ class Grid:
             self.pedestrians = [ped for ped in self.pedestrians if not ped.cell.row == row or not ped.cell.col == col]
         elif new_cell_type == 1:
             self.pedestrians.append(Pedestrian(self.cells[row, col]))
+            self.cells[row, col].dijkstra_cost = np.inf
+        elif new_cell_type == 3:
+            # If cell if target then the dijkstra cost should be zero
+            self.cells[row, col].dijkstra_cost = 0
+        elif new_cell_type == 2:
+            # If cell if target then the obstical cost for rudementary avoidance should be infinity.
+            self.cells[row, col].distance_to_target = np.inf
+            self.cells[row, col].dijkstra_cost = np.inf
+        else:
+            self.cells[row, col].dijkstra_cost = np.inf
 
         self.cells[row, col].cell_type = CellType(new_cell_type)
 
@@ -322,12 +332,15 @@ class Grid:
                 min_distance = cell_cost
         return selected_cell
 
-    def update_grid(self, dijkstra=False):
+    def update_grid(self, dijkstra=False, absorbing_targets=True):
         """
         this method updates moves the pedestrians who didn't reach the target yet.
         Pedestrians move horizontally & vertically one step per time step
         While they move 0.7 of a step diagonally
         Details on how that is calculated can be found in Pedestrian.move
+
+        dijkstra: whether to sue the dijkstra algorithm for cost calculations or not
+        absorbing_targets: decides if the pedestrians disappear once they reach the target
         :return: None
         """
         # save the current state of the grid
@@ -354,14 +367,19 @@ class Grid:
                 ped.cell = self.cells[ped.cell.row, ped.cell.col + (selected_cell.col - ped.cell.col)]
 
             # If a target is reached remove the pedestrian, otherwise update the new cell
-            if ped.cell.cell_type != CellType.TARGET:
-                ped.cell.cell_type = CellType.PEDESTRIAN
+            if absorbing_targets:
+                if ped.cell.cell_type != CellType.TARGET:
+                    ped.cell.cell_type = CellType.PEDESTRIAN
+                else:
+                    to_remove_peds.append(ped)
             else:
-                to_remove_peds.append(ped)
+                if ped.cell.cell_type != CellType.TARGET:
+                    ped.cell.cell_type = CellType.PEDESTRIAN
+
         # Remove pedestrians who reached the target
         self.pedestrians = [ped for ped in self.pedestrians if ped not in to_remove_peds]
 
-    def simulate(self, no_of_steps, dijkstra=False):
+    def simulate(self, no_of_steps, dijkstra=False, absorbing_targets = True):
         """
         This method executes the simulation based on the type of cost function (rudementary or dijkstra assigned)
         and stores all the states of the grid in an attribute
@@ -373,7 +391,7 @@ class Grid:
         self.past_states = []
         self.cells = self.initial_state
         for step in range(no_of_steps):
-            self.update_grid(dijkstra=dijkstra)
+            self.update_grid(dijkstra=dijkstra, absorbing_targets=absorbing_targets)
         return self.past_states
 
     def flood_dijkstra(self):
@@ -406,7 +424,7 @@ class Grid:
                         if dist < diagonal_neighbour.dijkstra_cost:
                             diagonal_neighbour.dijkstra_cost = dist
                 unvisited_cells.remove(cell_to_visit)
-
+        # print(self.get_dijkstra())
     def get_dijkstra(self):
         """
         :return: Returns the numpy array that contain all the dijkstra costs for each cell.
@@ -419,6 +437,19 @@ class Grid:
             dijkstra_array.append(d_row)
         dijkstra_array = np.array(dijkstra_array)
         return dijkstra_array
+
+    def get_distance_to_target(self):
+        """
+        :return: Returns the numpy array that contain all the dijkstra costs for each cell.
+        """
+        dist_to_target = []
+        for row_ind, row in enumerate(self.cells):
+            d_row = []
+            for col_ind, cell in enumerate(row):
+                d_row.append(cell.distance_to_target)
+            dist_to_target.append(d_row)
+        dist_to_target = np.array(dist_to_target)
+        return dist_to_target
 
     def animation_frame(self, i):
         """
@@ -438,7 +469,7 @@ class Grid:
         cmap = self.cmap
         bounds = [0, 1, 2, 3, 4]
         norm = colors.BoundaryNorm(bounds, cmap.N)
-        fig, ax = plt.subplots(figsize=(5, 5))
+        fig, ax = plt.subplots(figsize=(10, 10))
         self.animation = ax.imshow(self.past_states[0], cmap=cmap, norm=norm)
         ax.grid(which='major', axis='both', linestyle='-', color='k', linewidth=2)
         ax.set_xticks(np.arange(-.5, self.rows, 1))

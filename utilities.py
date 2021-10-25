@@ -57,7 +57,7 @@ def scenario_loader():
         scenario = np.array(list(csv.reader(csvfile))).astype(int)
     # Display the inital state of the scenario
     print("Initial state of the loaded scenario:")
-    visualize_state(scenario)
+    # visualize_state(scenario)
     return parser_array2obj(scenario)
 
 
