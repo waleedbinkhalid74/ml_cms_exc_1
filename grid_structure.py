@@ -18,7 +18,7 @@ class Cell:
     Cell class represents one cell in the grid. A cell can be a target, an obstacle or empty
     """
 
-    def __init__(self, row: int, col: int, cell_type: CellType = CellType.EMPTY):
+    def __init__(self, row: int, col: int, cell_type: CellType = CellType.EMPTY, obstacle_avoidance: bool = True):
         """
         Initiate the cell with the given position to an empty cell
         :param row: represents the cell position in the y-axis
@@ -29,7 +29,10 @@ class Cell:
         self.row: np.int = row
         self.col: np.int = col
         self.cell_type: CellType = cell_type
-        self.distance_to_target: np.float = np.inf if self.cell_type.value == CellType.OBSTACLE.value else 0
+        if obstacle_avoidance:
+            self.distance_to_target: np.float = np.inf if self.cell_type.value == CellType.OBSTACLE.value else 0
+        else:
+            self.distance_to_target = 0
         # self.cost: np.float = np.inf if self.cell_type.value == CellType.OBSTACLE.value else 0
         self.straight_neighbours = []
         self.diagonal_neighbours = []
@@ -40,7 +43,7 @@ class Cell:
 
     def get_distance(self, other_cell) -> np.float:
         """
-        get distance to another cell
+        get distance to another cell if the cell is not of type obstacle.
         :param other_cell:
         :return: euclidean distance as a np.float
         """
@@ -58,10 +61,8 @@ class Cell:
         """
         r: np.float = self.get_distance(ped.cell)
 
-        if r > r_max:
+        if r >= r_max:
             return 0
-        elif r == r_max:
-            return 1e10
         else:
             return np.exp(1 / (r * r - r_max * r_max))
 
@@ -113,8 +114,8 @@ class Pedestrian:
         if self.cell.row != cell.row and self.cell.col != cell.col:
             # diagonal step
             # the pedestrian only moves 0.7 horizontally & vertically
-            self.row = self.row + (cell.row - self.cell.row) * 0.7
-            self.col = self.col + (cell.col - self.cell.col) * 0.7
+            self.row = self.row + (cell.row - self.cell.row) * 0.71
+            self.col = self.col + (cell.col - self.cell.col) * 0.71
             full_row = self.row
             full_col = self.col
             # remove the potential 1 from self.row & self.col keeping the sign
@@ -283,7 +284,12 @@ class Grid:
             current_state.append([pedestrian.cell.row, pedestrian.cell.col])
         self.past_pedestrian_states.append(current_state)
 
-    def fill_distances(self):
+    def fill_distances(self, obstacle_avoidance: bool = True):
+        """
+        This method fills the cells with the cost which is simply the closest distance to the target
+        :param obstacle_avoidance: Obstacle avoidance can be turned off with a simple bool. Normally it is on.
+        :return: None
+        """
         targets = [cell for row in self.cells
                    for cell in row if cell.cell_type.value == 3]
         for row_ind, row in enumerate(self.cells):
@@ -374,7 +380,7 @@ class Grid:
                 else:
                     to_remove_peds.append(ped)
             else:
-                if ped.cell.cell_type != CellType.TARGET:
+                if ped.cell.cell_type.value != CellType.TARGET.value:
                     ped.cell.cell_type = CellType.PEDESTRIAN
 
         # Remove pedestrians who reached the target
@@ -393,7 +399,6 @@ class Grid:
         self.cells = self.initial_state
         for step in range(no_of_steps):
             self.update_grid(dijkstra=dijkstra, absorbing_targets=absorbing_targets)
-        print("DONEDONEDONE")
         return self.past_states
 
     def flood_dijkstra(self):
@@ -426,7 +431,6 @@ class Grid:
                         if dist < diagonal_neighbour.dijkstra_cost:
                             diagonal_neighbour.dijkstra_cost = dist
                 unvisited_cells.remove(cell_to_visit)
-        # print(self.get_dijkstra())
     def get_dijkstra(self):
         """
         :return: Returns the numpy array that contain all the dijkstra costs for each cell.
@@ -474,8 +478,8 @@ class Grid:
         fig, ax = plt.subplots(figsize=(10, 10))
         self.animation = ax.imshow(self.past_states[0], cmap=cmap, norm=norm)
         ax.grid(which='major', axis='both', linestyle='-', color='k', linewidth=2)
-        ax.set_xticks(np.arange(-.5, self.rows, 1))
-        ax.set_yticks(np.arange(-.5, self.cols, 1))
+        ax.set_xticks(np.arange(-.5, self.cols, 1))
+        ax.set_yticks(np.arange(-.5, self.rows, 1))
         # draw gridlines
         anim = animation.FuncAnimation(
             fig,

@@ -11,6 +11,10 @@
 1. Fix parser bug: Waleed
 
 
+## Points to discuss
+1. task_4 150 pedestrians too expensive to simulate
+2. 
+
 ### Tasks
 ~~1. Setup Github~~
 ~~2. Class structures: Qais~~
