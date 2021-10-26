@@ -13,7 +13,8 @@
 
 ## Points to discuss
 1. task_4 150 pedestrians too expensive to simulate
-2. 
+2. what is row and col in pedestrian. doesnt seem like coordinates. --> Qais?
+
 
 ### Tasks
 ~~1. Setup Github~~

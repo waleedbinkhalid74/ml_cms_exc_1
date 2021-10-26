@@ -34,6 +34,6 @@ def visualize_state(scenario):
     # Add labels for a good legend
     labels = ['Empty Cell', 'Pedestrian', 'Obstical', 'Target']
     patches = [mpatches.Patch(color=cmap.colors[i], label=labels[i]) for i in range(4)]
-    plt.legend(handles=patches, bbox_to_anchor=(1.5, 1.), prop={"size": 6})
+    plt.legend(handles=patches, bbox_to_anchor=(1.1, 1.), prop={"size": 6})
     plt.tight_layout()
     fig.savefig('task_1.pdf')

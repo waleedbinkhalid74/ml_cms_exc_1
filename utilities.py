@@ -9,7 +9,7 @@ from gui import GUI
 from grid_structure import Grid, Cell, CellType, Pedestrian
 
 
-def parser_array2obj(array) -> Grid:
+def parser_array2obj(array, obstacle_avoidance: bool = True) -> Grid:
     """
     This function converts scenarios in numpy array format the follow the following encoding:
        Array encoding rule
@@ -22,6 +22,7 @@ def parser_array2obj(array) -> Grid:
 
     For more details on the class structure please see the report or the Class docstring.
 
+    :param obstacle_avoidance: if false, all obstacles are ignored
     :param array: scenario in numpy array format
     :return: Grid object
     """
@@ -29,7 +30,7 @@ def parser_array2obj(array) -> Grid:
     cells = np.array([[Cell(row, column, CellType(array[row, column]))
                        for column in range(array.shape[1])]
                       for row in range(array.shape[0])])
-    grid = Grid(array.shape[0], array.shape[1], cells)
+    grid = Grid(array.shape[0], array.shape[1], cells, obstacle_avoidance)
     grid_valid, error_msg = grid.is_valid()
     assert grid_valid, error_msg
     return grid

@@ -37,22 +37,25 @@ class Cell:
         self.straight_neighbours = []
         self.diagonal_neighbours = []
         self.dijkstra_cost = 0 if self.cell_type.value == CellType.TARGET.value else np.inf
-        self.dijkstra_prev = None  # previous node dijkstra
-        self.dijkstra_visit_status = False
         self.path: bool = False  # did a pedestrian pass through this cell, for visualization only
 
-    def get_distance(self, other_cell) -> np.float:
+    def get_distance(self, other_cell, obstacle_avoidance: bool=True) -> np.float:
         """
         get distance to another cell if the cell is not of type obstacle.
-        :param other_cell:
+        :param other_cell: cell from which distance has to be calculated
+        obstacle_avoidance: if false ignores all obstacles
         :return: euclidean distance as a np.float
         """
-        if self.cell_type.value == 2:
-            return np.inf
+
+        if obstacle_avoidance:
+            if self.cell_type.value == 2:
+                return np.inf
+            else:
+                return np.sqrt(np.power(self.row - other_cell.row, 2) + np.power(self.col - other_cell.col, 2))
         else:
             return np.sqrt(np.power(self.row - other_cell.row, 2) + np.power(self.col - other_cell.col, 2))
 
-    def cost_to_pedestrian(self, ped, r_max: np.float = 1) -> np.float:
+    def cost_to_pedestrian(self, ped, r_max: np.float = 1.5) -> np.float:
         """
         get cost added by a pedestrian to this cell
         :param ped: A pedestrian to whom to calculate the distance cost
@@ -64,7 +67,9 @@ class Cell:
         if r >= r_max:
             return 0
         else:
-            return np.exp(1 / (r * r - r_max * r_max))
+            # return np.exp(1 / (r * r - r_max * r_max))
+            return 1/np.exp(r * r - r_max * r_max)
+
 
     def __str__(self):
         return f"Cell ({self.row}, {self.col}) Type = {self.cell_type}"
@@ -138,11 +143,12 @@ class Grid:
     Grid class represents a 2D array of cells.
     """
 
-    def __init__(self, rows: int, cols: int, cells: np.ndarray = None):
+    def __init__(self, rows: int, cols: int, cells: np.ndarray = None, obstacle_avoidance: bool = True):
         """
         Set up basic attributes for the GUI object
         :param rows: row size of grid
         :param cols: column size of grid
+        :param obstacle_avoidance: if false, obstacles are ignored
         """
         super().__init__()
 
@@ -169,7 +175,8 @@ class Grid:
                             for cell in row if cell.cell_type.value == 1]
         self.get_current_state()
         self.initial_state = self.cells.copy()
-        self.fill_distances()  # Fills the cells with the cost as a parameter to the distance to the target
+        self.fill_distances(obstacle_avoidance=obstacle_avoidance)  # Fills the cells with the cost as a parameter
+                                                                    # to the distance to the target
         self.flood_dijkstra()  # Fills the cells with the cost as per the dijkstra's algorithm
 
     def is_valid(self):
@@ -296,8 +303,8 @@ class Grid:
             for col_ind, cell in enumerate(row):
                 min_dist = np.inf
                 for tar_ind, target in enumerate(targets):
-                    distance = cell.get_distance(target)
-                    if cell.get_distance(target) < min_dist:
+                    distance = cell.get_distance(target, obstacle_avoidance)
+                    if cell.get_distance(target, obstacle_avoidance) < min_dist:
                         cell.distance_to_target = distance
                         min_dist = distance
 
@@ -316,6 +323,7 @@ class Grid:
 
     def __get_cell_cost(self, dijkstra, ped, cell):
         pc = self.__pedestrians_costs(ped, cell)
+        # print("pedestrian", pc)
         if dijkstra:
             return cell.dijkstra_cost + pc
         else:
@@ -324,10 +332,16 @@ class Grid:
     def __choose_best_neighbor(self, dijkstra, ped):
         selected_cell = ped.cell
         min_distance = self.__get_cell_cost(dijkstra, ped, selected_cell)
+        # print("START", min_distance)
+        # if dijkstra:
+        #     min_distance = selected_cell.dijkstra_cost
+        # else:
+        #     min_distance = selected_cell.distance_to_target
         # TODO consider cost to pedestrians or other parameters
         # TODO maybe this function be updated to have the kind of distance as a parameter
         for nc_ind, nc in enumerate(ped.cell.straight_neighbours):
             cell_cost = self.__get_cell_cost(dijkstra, ped, nc)
+            # print("COST: ", cell_cost)
             if cell_cost < min_distance:
                 selected_cell = nc
                 min_distance = cell_cost
