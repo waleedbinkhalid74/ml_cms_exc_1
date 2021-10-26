@@ -9,3 +9,5 @@
 ~~7. Work sheet says that if the neighbouring cell is the target the pedestrian waits. But should we not remove the pedestrian~~
 8. For task 3 it says the pedestrians should be in a circle at 30-50m. Is this the diameter of the circle? If this is a radius does this mean we can increase the number of cells in the scenario that was given in task 2 (from 50x50 to more) considering one cell is 1m?
 9. Cost function given in ws is not good. its only 0.3 when pedestrians are very close. is this a typo? can we use 1/exp(r^2 - r_max ^ 2) 
+10. How to model pedestrian dimensions?
+11. Should the speed be a parameter? Can we set it to constant for all pedestrians? Should we be required to change it from the gui/cli?

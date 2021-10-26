@@ -161,7 +161,7 @@ class Grid:
         self.cols: np.int = cols
         self.time_step: np.int = 0
 
-        ## Attributes used for visualization and animation
+        # Attributes used for visualization and animation
         # Standard colormap to homogenize all visualizations
         self.cmap = colors.ListedColormap(['blue', 'red', 'yellow', 'green'])
         self.animation = None
@@ -341,7 +341,6 @@ class Grid:
         # TODO maybe this function be updated to have the kind of distance as a parameter
         for nc_ind, nc in enumerate(ped.cell.straight_neighbours):
             cell_cost = self.__get_cell_cost(dijkstra, ped, nc)
-            # print("COST: ", cell_cost)
             if cell_cost < min_distance:
                 selected_cell = nc
                 min_distance = cell_cost
@@ -350,6 +349,7 @@ class Grid:
             if cell_cost < min_distance:
                 selected_cell = nc
                 min_distance = cell_cost
+
         return selected_cell
 
     def update_grid(self, dijkstra=False, absorbing_targets=True):
@@ -363,13 +363,13 @@ class Grid:
         absorbing_targets: decides if the pedestrians disappear once they reach the target
         :return: None
         """
+        self.time_step += 1
         # save the current state of the grid
         self.past_states.append(self.to_array())
         # pedestrians who reached the target
         to_remove_peds = []
         for ped_ind, ped in enumerate(self.pedestrians):
             selected_cell = self.__choose_best_neighbor(dijkstra, ped)
-
             # Get the distance the pedestrian should move
             ped_row, ped_col = ped.move(selected_cell)
 
@@ -381,8 +381,8 @@ class Grid:
 
             # Check if the pedestrian should move a full cell horizontally
             if np.abs(ped_col) >= 1.0:
-                ped.cell.cell_type = CellType.EMPTY
                 if np.abs(ped_row) < 1.0:
+                    ped.cell.cell_type = CellType.EMPTY
                     ped.cell.path = True
                 ped.cell = self.cells[ped.cell.row, ped.cell.col + (selected_cell.col - ped.cell.col)]
 
@@ -413,6 +413,9 @@ class Grid:
         self.cells = self.initial_state
         for step in range(no_of_steps):
             self.update_grid(dijkstra=dijkstra, absorbing_targets=absorbing_targets)
+            if not self.pedestrians:
+                break
+        print("The simulation was took", self.time_step, "steps.")
         return self.past_states
 
     def flood_dijkstra(self):
@@ -445,7 +448,8 @@ class Grid:
                         if dist < diagonal_neighbour.dijkstra_cost:
                             diagonal_neighbour.dijkstra_cost = dist
                 unvisited_cells.remove(cell_to_visit)
-    def get_dijkstra(self):
+
+    def get_dijkstra(self) -> np.ndarray:
         """
         :return: Returns the numpy array that contain all the dijkstra costs for each cell.
         """

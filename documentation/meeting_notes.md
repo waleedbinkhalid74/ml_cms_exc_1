@@ -14,7 +14,9 @@
 ## Points to discuss
 1. task_4 150 pedestrians too expensive to simulate
 2. what is row and col in pedestrian. doesnt seem like coordinates. --> Qais?
-
+3. rimea_6 some obstacles get eated away
+4. rimea_4 is not clear. need to ask professor
+5. 
 
 ### Tasks
 ~~1. Setup Github~~
