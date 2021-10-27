@@ -187,7 +187,5 @@ def start_game_gui(grid: Grid, max_steps: int = 200, step_time: int = 750, dijks
         pygame.display.update()
 
 # TODO:
-#   1. Load a complete scenario
-#   2. Track & Show Number of steps & Real time
-#   3. Add cost to obstacles when not using dijkstra
-#   4. Default values for initialization questions
+#   1. Track & Show Number of steps & Real time
+#   2. Default values for initialization questions

@@ -217,14 +217,12 @@ class Grid:
         elif new_cell_type == 1:
             self.pedestrians.append(Pedestrian(self.cells[row, col]))
             self.cells[row, col].dijkstra_cost = np.inf
-        elif new_cell_type == 3:
+        if new_cell_type == 3:
             # If cell if target then the dijkstra cost should be zero
             self.cells[row, col].dijkstra_cost = 0
-        elif new_cell_type == 2:
+        if new_cell_type == 2:
             # If cell if target then the obstical cost for rudementary avoidance should be infinity.
             self.cells[row, col].distance_to_target = np.inf
-            self.cells[row, col].dijkstra_cost = np.inf
-        else:
             self.cells[row, col].dijkstra_cost = np.inf
 
         self.cells[row, col].cell_type = CellType(new_cell_type)
