@@ -30,7 +30,7 @@ def create_button(screen, horz_pos: int, vert_pos: int, width: int, height: int,
     return button
 
 
-def start_game_gui(grid: Grid, max_steps: int = 200, step_time: int = 750, dijkstra=False):
+def start_game_gui(grid: Grid, max_steps: int = 200, step_time: int = 300, dijkstra=False):
     """
     This function sets up and starts a pygame gui window to simulate a grid object
     :param grid: Grid object to simulate

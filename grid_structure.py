@@ -54,7 +54,7 @@ class Cell:
         else:
             return np.sqrt(np.power(self.row - other_cell.row, 2) + np.power(self.col - other_cell.col, 2))
 
-    def cost_to_pedestrian(self, ped, r_max: np.float = 1.5) -> np.float:
+    def cost_to_pedestrian(self, ped, r_max: np.float = 1.2) -> np.float:
         """
         get cost added by a pedestrian to this cell
         :param ped: A pedestrian to whom to calculate the distance cost
@@ -173,92 +173,6 @@ class Grid:
                             for cell in row if cell.cell_type.value == 1]
         # self.get_current_state()
         self.initial_state = self.cells.copy()
-<<<<<<< HEAD
-        self.fill_distances(obstacle_avoidance=obstacle_avoidance)  # Fills the cells with the cost as a parameter
-                                                                    # to the distance to the target
-        self.flood_dijkstra()  # Fills the cells with the cost as per the dijkstra's algorithm
-
-    def is_valid(self):
-        """
-        Checks if all cells in the grid are valid cells and that there are no illegal overlap
-        :return: true or false with an error message
-        """
-        if any(not ped.is_valid() for ped in self.pedestrians):
-            return False, "Some pedestrians are standing on cells with invalid types"
-
-        for i in range(len(self.pedestrians)):
-            for j in range(i + 1, len(self.pedestrians)):
-                if self.pedestrians[i].cell.row == self.pedestrians[j].cell.row and \
-                        self.pedestrians[i].cell.col == self.pedestrians[j].cell.col:
-                    return False, f"pedestrians {self.pedestrians[i].id} and {self.pedestrians[j].id} " \
-                                  f"are standing on the same cell"
-        return True, "The grid is valid"
-
-    def __find_pedestrian(self, row: int, col: int) -> Pedestrian:
-        for ind, ped in enumerate(self.pedestrians):
-            if ped.cell.row == row and \
-                    ped.cell.col == col:
-                return ped
-
-    def change_cell_type(self, row: int, col: int) -> None:
-        """
-        Updates the type of the cell in the give indices and
-        update the pedestrians list if necessary
-        :param row: row index
-        :param col: column index
-        :return: None
-        """
-        old_cell_type = self.cells[row, col].cell_type
-        new_cell_type = (old_cell_type.value + 1) % 4
-
-        if old_cell_type.value == 1:
-            self.pedestrians = [ped for ped in self.pedestrians if not ped.cell.row == row or not ped.cell.col == col]
-        elif new_cell_type == 1:
-            self.pedestrians.append(Pedestrian(self.cells[row, col]))
-            self.cells[row, col].dijkstra_cost = np.inf
-        if new_cell_type == 3:
-            # If cell if target then the dijkstra cost should be zero
-            self.cells[row, col].dijkstra_cost = 0
-        if new_cell_type == 2:
-            # If cell if target then the obstical cost for rudementary avoidance should be infinity.
-            self.cells[row, col].distance_to_target = np.inf
-            self.cells[row, col].dijkstra_cost = np.inf
-
-        self.cells[row, col].cell_type = CellType(new_cell_type)
-
-        if old_cell_type.value == 3 or new_cell_type == 3:
-            self.fill_distances()
-            self.flood_dijkstra()
-
-    def to_array(self) -> np.ndarray:
-        """
-        This function reads the grid object and converts it into a numpy array with following encoding
-        Array encoding rule
-            0: Empty Cell
-            1. Pedestrian Cell
-            2. Obstacle Cell
-            3. Target Cell
-        All array entries will be ints or floats
-
-        For more details on the class structure please see the report or the Class docstring.
-
-        :return: numpy array
-        """
-        array = np.array([[cell.cell_type.value for cell in row] for row in self.cells])
-        return array
-
-    def __str__(self):
-        res = ""
-        for row_ind, row in enumerate(self.cells):
-            for col_ind, cell in enumerate(row):
-                res += f"{cell.cell_type.value} "
-            res += "\n"
-        return res
-=======
-        # self.fill_distances(obstacle_avoidance=obstacle_avoidance)  # Fills the cells with the cost as a parameter
-        # to the distance to the target
-        # self.flood_dijkstra()  # Fills the cells with the cost as per the dijkstra's algorithm
->>>>>>> 1319617c0fbd51d4f84fd36a2a5319a1023f20ac
 
     def assign_neighbours(self):
         """

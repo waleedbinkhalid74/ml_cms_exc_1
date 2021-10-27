@@ -34,16 +34,17 @@
 ~~11. The cost of pedestrians should be accumulated in the normal cost of the cell(?)~~
 13. Fast Marching Algo reading: Waleed, Qais, Yiming
 14. Documentation: Waleed, Qais
-    1. Explaination of pedestrian interaction: Qais
+~~15. Explaination of pedestrian interaction: Qais~~
 ~~2. Explaination of dijkstra~~
 ~~2. Explaination of rudementary obstacle avoidance: Waleed~~
-    3. Explaination of update rule: Qais
-    4. Explaination of new GUI: Qais
-    5. Explaination of animator: Waleed, Qais
-    6. Testing: Conduct RiMEA test 1 and 4 with documentation and explaination in Latex and notebook: Yiming
-    7. Testing: Conduct RiMEA test 6 and 7 with documentation and explaination in Latex and notebook: Waleed
-15. Check animation bug in RiMEA_1.csv
+    1. Explaination of update rule: Yiming
+    2. Explaination of new GUI: Qais
+    3. Explaination of animator: Waleed, Qais
+    4. Testing: Conduct RiMEA test 1 and 4 with documentation and explaination in Latex and notebook: Yiming
+    5. Testing: Conduct RiMEA test 6 and 7 with documentation and explaination in Latex and notebook: Waleed
 ~~16. Integrate new GUI to scenario_builder: Qais~~
 ~~17. Run tasks 1-4 and document in notebook and latex~~
 ~~18. UML diagram of the class structure: Yiming~~
-19. Add operation for ignoring neighbours that are in the visited cell in dijkstra algo: Waleed
+15. Add operation for ignoring neighbours that are in the visited cell in dijkstra algo: Waleed
+16. Add average pedestrian speed by speed=total distance by pedestrian at a certain point/current time passed: Qais
+17. Add speed as a variable in pedestrian.move: Qais
