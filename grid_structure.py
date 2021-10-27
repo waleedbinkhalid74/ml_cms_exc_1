@@ -33,17 +33,16 @@ class Cell:
             self.distance_to_target: np.float = np.inf if self.cell_type.value == CellType.OBSTACLE.value else 0
         else:
             self.distance_to_target = 0
-        # self.cost: np.float = np.inf if self.cell_type.value == CellType.OBSTACLE.value else 0
         self.straight_neighbours = []
         self.diagonal_neighbours = []
         self.dijkstra_cost = 0 if self.cell_type.value == CellType.TARGET.value else np.inf
         self.path: bool = False  # did a pedestrian pass through this cell, for visualization only
 
-    def get_distance(self, other_cell, obstacle_avoidance: bool=True) -> np.float:
+    def get_distance(self, other_cell, obstacle_avoidance: bool = True) -> np.float:
         """
         get distance to another cell if the cell is not of type obstacle.
         :param other_cell: cell from which distance has to be calculated
-        obstacle_avoidance: if false ignores all obstacles
+        :param obstacle_avoidance: if false ignores all obstacles
         :return: euclidean distance as a np.float
         """
 
@@ -59,17 +58,15 @@ class Cell:
         """
         get cost added by a pedestrian to this cell
         :param ped: A pedestrian to whom to calculate the distance cost
-        :param r_max:
+        :param r_max: Maximum distance to start avoiding other pedestrians
         :return: the cost calculated based on the distance to the pedestrian
         """
         r: np.float = self.get_distance(ped.cell)
-
         if r >= r_max:
             return 0
         else:
             # return np.exp(1 / (r * r - r_max * r_max))
-            return 1/np.exp(r * r - r_max * r_max)
-
+            return 1 / np.exp(r * r - r_max * r_max)
 
     def __str__(self):
         return f"Cell ({self.row}, {self.col}) Type = {self.cell_type}"
@@ -119,13 +116,11 @@ class Pedestrian:
         if self.cell.row != cell.row and self.cell.col != cell.col:
             # diagonal step
             # the pedestrian only moves 0.7 horizontally & vertically
-            self.row = self.row + (cell.row - self.cell.row) * 0.71
-            self.col = self.col + (cell.col - self.cell.col) * 0.71
-            full_row = self.row
-            full_col = self.col
+            full_row = self.row + (cell.row - self.cell.row) * 0.71
+            full_col = self.col + (cell.col - self.cell.col) * 0.71
             # remove the potential 1 from self.row & self.col keeping the sign
-            self.row = (self.row % 1.0) * np.sign(self.row)
-            self.col = (self.col % 1.0) * np.sign(self.col)
+            self.row = (full_row % 1.0) * np.sign(full_row)
+            self.col = (full_col % 1.0) * np.sign(full_col)
             return full_row, full_col
         else:
             # straight step
@@ -143,6 +138,9 @@ class Grid:
     Grid class represents a 2D array of cells.
     """
 
+    #######################################################################################################
+    # Initialization functions
+    #######################################################################################################
     def __init__(self, rows: int, cols: int, cells: np.ndarray = None, obstacle_avoidance: bool = True):
         """
         Set up basic attributes for the GUI object
@@ -154,7 +152,7 @@ class Grid:
 
         # -> This is a list of numpy arrays of all the past states of
         # the grid starting from the initial state
-        self.past_pedestrian_states = []
+        # self.past_pedestrian_states = []
         self.past_states = []
 
         self.rows: np.int = rows
@@ -173,8 +171,9 @@ class Grid:
 
         self.pedestrians = [Pedestrian(cell) for row in self.cells
                             for cell in row if cell.cell_type.value == 1]
-        self.get_current_state()
+        # self.get_current_state()
         self.initial_state = self.cells.copy()
+<<<<<<< HEAD
         self.fill_distances(obstacle_avoidance=obstacle_avoidance)  # Fills the cells with the cost as a parameter
                                                                     # to the distance to the target
         self.flood_dijkstra()  # Fills the cells with the cost as per the dijkstra's algorithm
@@ -255,6 +254,11 @@ class Grid:
                 res += f"{cell.cell_type.value} "
             res += "\n"
         return res
+=======
+        # self.fill_distances(obstacle_avoidance=obstacle_avoidance)  # Fills the cells with the cost as a parameter
+        # to the distance to the target
+        # self.flood_dijkstra()  # Fills the cells with the cost as per the dijkstra's algorithm
+>>>>>>> 1319617c0fbd51d4f84fd36a2a5319a1023f20ac
 
     def assign_neighbours(self):
         """
@@ -278,17 +282,30 @@ class Grid:
                                 self.cells[row][col].diagonal_neighbours.append(self.cells[i, j])
                 self.cells[row][col].straight_neighbours.remove(self.cells[row, col])
 
-    def get_current_state(self):
+    def change_cell_type(self, row: int, col: int) -> None:
         """
-        This function can read the coordinates of all pedestrians at current step
-        and store it in self.past_states for plotting later.
-        :param: grid -> Grid class
+        Updates the type of the cell in the give indices and
+        update the pedestrians list if necessary
+        :param row: row index
+        :param col: column index
+        :return: None
         """
-        current_state = []
-        for pedestrian in self.pedestrians:
-            current_state.append([pedestrian.cell.row, pedestrian.cell.col])
-        self.past_pedestrian_states.append(current_state)
+        old_cell_type = self.cells[row, col].cell_type.value
+        new_cell_type = (old_cell_type + 1) % 4
 
+        self.cells[row, col].cell_type = CellType(new_cell_type)
+        # Update the pedestrians list
+        if old_cell_type == 1 or new_cell_type == 1:
+            self.pedestrians = [Pedestrian(cell) for row in self.cells
+                                for cell in row if cell.cell_type.value == 1]
+
+        if old_cell_type > 1 or new_cell_type > 1:
+            self.cells[row, col].distance_to_target = np.inf if new_cell_type == CellType.OBSTACLE.value else 0
+            self.cells[row, col].dijkstra_cost = 0 if new_cell_type == CellType.TARGET.value else np.inf
+
+    #######################################################################################################
+    # Flood cost values functions
+    #######################################################################################################
     def fill_distances(self, obstacle_avoidance: bool = True):
         """
         This method fills the cells with the cost which is simply the closest distance to the target
@@ -306,6 +323,40 @@ class Grid:
                         cell.distance_to_target = distance
                         min_dist = distance
 
+    def flood_dijkstra(self):
+        """
+        This function uses dijkstra's algorithm to floor all the cells that are part of the grid with a
+        cost value as defined by the dijkstra's algorithm.
+
+        We need to run the dijkstra's algorithm for each target since we would like to cater to multiple
+        targets as well. Unlike the normal algorithm, in this case we take the target as the source (since we
+        wish the distance at the target to be zero) and the pedestrian as the destination.
+        :return: None
+        """
+        targets = [cell for row in self.cells
+                   for cell in row if cell.cell_type.value == 3]
+
+        for target in targets:
+            unvisited_cells = [cell for cell in self.cells.flatten() if
+                               cell.cell_type.value is not CellType.OBSTACLE.value]
+            # Once this list is empty the algorithm is complete
+            while unvisited_cells:  # While the unvisited_cells is not empty
+                cell_to_visit = min(unvisited_cells, key=lambda x: x.dijkstra_cost)
+                for straight_neighbour in cell_to_visit.straight_neighbours:
+                    if straight_neighbour.cell_type.value != CellType.OBSTACLE.value:
+                        dist = cell_to_visit.dijkstra_cost + cell_to_visit.get_distance(straight_neighbour)
+                        if dist < straight_neighbour.dijkstra_cost:
+                            straight_neighbour.dijkstra_cost = dist
+                for diagonal_neighbour in cell_to_visit.diagonal_neighbours:
+                    if diagonal_neighbour.cell_type.value != CellType.OBSTACLE.value:
+                        dist = cell_to_visit.dijkstra_cost + cell_to_visit.get_distance(diagonal_neighbour)
+                        if dist < diagonal_neighbour.dijkstra_cost:
+                            diagonal_neighbour.dijkstra_cost = dist
+                unvisited_cells.remove(cell_to_visit)
+
+    #######################################################################################################
+    # Simulation functions
+    #######################################################################################################
     def __pedestrians_costs(self, p1: Pedestrian, neighbor: Cell) -> np.float:
         """
         calculate the sum of all other pedestrians on the neighbor cell
@@ -330,13 +381,6 @@ class Grid:
     def __choose_best_neighbor(self, dijkstra, ped):
         selected_cell = ped.cell
         min_distance = self.__get_cell_cost(dijkstra, ped, selected_cell)
-        # print("START", min_distance)
-        # if dijkstra:
-        #     min_distance = selected_cell.dijkstra_cost
-        # else:
-        #     min_distance = selected_cell.distance_to_target
-        # TODO consider cost to pedestrians or other parameters
-        # TODO maybe this function be updated to have the kind of distance as a parameter
         for nc_ind, nc in enumerate(ped.cell.straight_neighbours):
             cell_cost = self.__get_cell_cost(dijkstra, ped, nc)
             if cell_cost < min_distance:
@@ -347,7 +391,6 @@ class Grid:
             if cell_cost < min_distance:
                 selected_cell = nc
                 min_distance = cell_cost
-
         return selected_cell
 
     def update_grid(self, dijkstra=False, absorbing_targets=True):
@@ -398,7 +441,7 @@ class Grid:
         # Remove pedestrians who reached the target
         self.pedestrians = [ped for ped in self.pedestrians if ped not in to_remove_peds]
 
-    def simulate(self, no_of_steps, dijkstra=False, absorbing_targets = True):
+    def simulate(self, no_of_steps, dijkstra=False, absorbing_targets=True):
         """
         This method executes the simulation based on the type of cost function (rudementary or dijkstra assigned)
         and stores all the states of the grid in an attribute
@@ -409,6 +452,10 @@ class Grid:
         """
         self.past_states = []
         self.cells = self.initial_state
+        if dijkstra:
+            self.flood_dijkstra()
+        else:
+            self.fill_distances()
         for step in range(no_of_steps):
             self.update_grid(dijkstra=dijkstra, absorbing_targets=absorbing_targets)
             if not self.pedestrians:
@@ -416,62 +463,25 @@ class Grid:
         print("The simulation was took", self.time_step, "steps.")
         return self.past_states
 
-    def flood_dijkstra(self):
+    #######################################################################################################
+    # Visiulization functions
+    #######################################################################################################
+    def to_array(self) -> np.ndarray:
         """
-        This function uses dijkstra's algorithm to floor all the cells that are part of the grid with a
-        cost value as defined by the dijkstra's algorithm.
+        This function reads the grid object and converts it into a numpy array with following encoding
+        Array encoding rule
+            0: Empty Cell
+            1. Pedestrian Cell
+            2. Obstacle Cell
+            3. Target Cell
+        All array entries will be ints or floats
 
-        We need to run the dijkstra's algorithm for each target since we would like to cater to multiple
-        targets as well. Unlike the normal algorithm, in this case we take the target as the source (since we
-        wish the distance at the target to be zero) and the pedestrian as the destination.
-        :return: None
-        """
-        targets = [cell for row in self.cells
-                   for cell in row if cell.cell_type.value == 3]
+        For more details on the class structure please see the report or the Class docstring.
 
-        for target in targets:
-            unvisited_cells = [cell for cell in self.cells.flatten() if
-                               cell.cell_type.value is not CellType.OBSTACLE.value]
-            # Once this list is empty the algorithm is complete
-            while unvisited_cells:  # While the unvisited_cells is not empty
-                cell_to_visit = min(unvisited_cells, key=lambda x: x.dijkstra_cost)
-                for straight_neighbour in cell_to_visit.straight_neighbours:
-                    if straight_neighbour.cell_type.value != CellType.OBSTACLE.value:
-                        dist = cell_to_visit.dijkstra_cost + cell_to_visit.get_distance(straight_neighbour)
-                        if dist < straight_neighbour.dijkstra_cost:
-                            straight_neighbour.dijkstra_cost = dist
-                for diagonal_neighbour in cell_to_visit.diagonal_neighbours:
-                    if diagonal_neighbour.cell_type.value != CellType.OBSTACLE.value:
-                        dist = cell_to_visit.dijkstra_cost + cell_to_visit.get_distance(diagonal_neighbour)
-                        if dist < diagonal_neighbour.dijkstra_cost:
-                            diagonal_neighbour.dijkstra_cost = dist
-                unvisited_cells.remove(cell_to_visit)
-
-    def get_dijkstra(self) -> np.ndarray:
+        :return: numpy array
         """
-        :return: Returns the numpy array that contain all the dijkstra costs for each cell.
-        """
-        dijkstra_array = []
-        for row_ind, row in enumerate(self.cells):
-            d_row = []
-            for col_ind, cell in enumerate(row):
-                d_row.append(cell.dijkstra_cost)
-            dijkstra_array.append(d_row)
-        dijkstra_array = np.array(dijkstra_array)
-        return dijkstra_array
-
-    def get_distance_to_target(self) -> np.ndarray:
-        """
-        :return: Returns the numpy array that contain all the dijkstra costs for each cell.
-        """
-        dist_to_target = []
-        for row_ind, row in enumerate(self.cells):
-            d_row = []
-            for col_ind, cell in enumerate(row):
-                d_row.append(cell.distance_to_target)
-            dist_to_target.append(d_row)
-        dist_to_target = np.array(dist_to_target)
-        return dist_to_target
+        array = np.array([[cell.cell_type.value for cell in row] for row in self.cells])
+        return array
 
     def animation_frame(self, i):
         """
@@ -505,3 +515,56 @@ class Grid:
         )
         plt.show()
         return anim
+
+    #######################################################################################################
+    # Debugging functions
+    #######################################################################################################
+    def get_dijkstra(self) -> np.ndarray:
+        """
+        :return: Returns the numpy array that contain all the dijkstra costs for each cell.
+        """
+        dijkstra_array = []
+        for row_ind, row in enumerate(self.cells):
+            d_row = []
+            for col_ind, cell in enumerate(row):
+                d_row.append(cell.dijkstra_cost)
+            dijkstra_array.append(d_row)
+        dijkstra_array = np.array(dijkstra_array)
+        return dijkstra_array
+
+    def get_distance_to_target(self) -> np.ndarray:
+        """
+        :return: Returns the numpy array that contain all the dijkstra costs for each cell.
+        """
+        dist_to_target = []
+        for row_ind, row in enumerate(self.cells):
+            d_row = []
+            for col_ind, cell in enumerate(row):
+                d_row.append(cell.distance_to_target)
+            dist_to_target.append(d_row)
+        dist_to_target = np.array(dist_to_target)
+        return dist_to_target
+
+    def is_valid(self):
+        """
+        Checks if all cells in the grid are valid cells and that there are no illegal overlap
+        :return: true or false with an error message
+        """
+        if any(not ped.is_valid() for ped in self.pedestrians):
+            return False, "Some pedestrians are standing on cells with invalid types"
+
+        for i in range(len(self.pedestrians)):
+            for j in range(i + 1, len(self.pedestrians)):
+                if self.pedestrians[i].cell.row == self.pedestrians[j].cell.row and \
+                        self.pedestrians[i].cell.col == self.pedestrians[j].cell.col:
+                    return False, f"pedestrians {self.pedestrians[i].id} and {self.pedestrians[j].id} " \
+                                  f"are standing on the same cell"
+        return True, "The grid is valid"
+
+    def __str__(self):
+        res = ""
+        for row_ind, row in enumerate(self.cells):
+            for col_ind, cell in enumerate(row):
+                res += f"{cell.cell_type.value} "
+            res += "\n"
+        return res

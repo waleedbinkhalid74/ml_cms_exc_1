@@ -38,5 +38,9 @@ def crowd_simulator():
     game_gui.start_game_gui(scenario, max_steps=max_steps, dijkstra=dijkstra)
 
 
+def main():
+    crowd_simulator()
+
+
 if __name__ == "__main__":
     main()
