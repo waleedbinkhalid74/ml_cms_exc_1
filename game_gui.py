@@ -47,7 +47,7 @@ def start_game_gui(grid: Grid, max_steps: int = 200, step_time: int = 750, dijks
     infoObject = pygame.display.Info()
     monitor_width, monitor_height = infoObject.current_w, infoObject.current_h
     # Define essential colors
-    black = (0, 0, 0)
+    blue = (0, 0, 100)
     white = (200, 200, 200)
     red = (200, 0, 0)
     green = (0, 100, 0)
@@ -68,7 +68,7 @@ def start_game_gui(grid: Grid, max_steps: int = 200, step_time: int = 750, dijks
 
     # Set game window
     screen = pygame.display.set_mode((window_width, window_height + 60))
-    screen.fill(black)
+    screen.fill(blue)
     pygame.display.set_caption("Cellular Automata")
     game_window_icon = pygame.image.load('icons/crowd.png')
     pygame.display.set_icon(game_window_icon)
@@ -80,9 +80,9 @@ def start_game_gui(grid: Grid, max_steps: int = 200, step_time: int = 750, dijks
             rects.append([])
         for j in range(grid.cols + 1):
             if i == 0 and j != 0:
-                create_button(screen, col_edge + j * block_size, row_edge, block_size, block_size, str(j), black, white)
+                create_button(screen, col_edge + j * block_size, row_edge, block_size, block_size, str(j), blue, white)
             elif j == 0 and i != 0:
-                create_button(screen, col_edge, row_edge + i * block_size, block_size, block_size, str(i), black, white)
+                create_button(screen, col_edge, row_edge + i * block_size, block_size, block_size, str(i), blue, white)
             elif i != 0 and j != 0:
                 rects[i - 1].append(pygame.Rect(col_edge + j * block_size, row_edge + i * block_size,
                                                 block_size, block_size))
@@ -91,11 +91,11 @@ def start_game_gui(grid: Grid, max_steps: int = 200, step_time: int = 750, dijks
     start_button = create_button(screen,
                                  2 * window_width // 8, window_height + 10,
                                  block_size * 6, block_size * 3 // 2,
-                                 "Start", green, black)
+                                 "Start", green, blue)
     pause_button = create_button(screen,
                                  5 * window_width // 8, window_height + 10,
                                  block_size * 6, block_size * 3 // 2,
-                                 "Pause", red, black)
+                                 "Pause", red, blue)
 
     # Initial settings
     steps = 0
@@ -121,7 +121,7 @@ def start_game_gui(grid: Grid, max_steps: int = 200, step_time: int = 750, dijks
                     color = gray
                     color_num = 4
                 # Remove old color
-                pygame.draw.rect(screen, black, rects[i][j], 0)
+                pygame.draw.rect(screen, blue, rects[i][j], 0)
                 # Put new color
                 pygame.draw.rect(screen, color, rects[i][j], 1 if color_num == 0 else 0, border_radius=1)
                 # Draw borders
@@ -144,7 +144,7 @@ def start_game_gui(grid: Grid, max_steps: int = 200, step_time: int = 750, dijks
             create_button(screen,
                           window_width // 8, window_height + 10,
                           6 * window_width // 8, block_size * 3 // 2,
-                          f"Time = {simulation_total_time / 1000} seconds     steps = {steps}", green, black)
+                          f"Time = {simulation_total_time / 1000} seconds     steps = {steps}", green, blue)
             simulation_running = False
             simulation_done = True
 
@@ -167,6 +167,10 @@ def start_game_gui(grid: Grid, max_steps: int = 200, step_time: int = 750, dijks
                 if not simulation_done and start_button.collidepoint(mouse_pos):
                     simulation_running = True
                     if not simulation_start:
+                        if dijkstra:
+                            grid.flood_dijkstra()
+                        else:
+                            grid.fill_distances()
                         simulation_start_time = pygame.time.get_ticks()
                     else:
                         simulation_stoppage_time += pygame.time.get_ticks() - simulation_pause_time
