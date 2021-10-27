@@ -122,7 +122,7 @@ class Pedestrian:
             full_row = self.row + (cell.row - self.cell.row) * 0.71
             full_col = self.col + (cell.col - self.cell.col) * 0.71
             # remove the potential 1 from self.row & self.col keeping the sign if a diagonal step can be made
-            if full_row >= 1 and full_col >= 1:
+            if np.abs(full_row) >= 1 and np.abs(full_col) >= 1:
                 self.row = (full_row % 1.0) * np.sign(full_row)
                 self.col = (full_col % 1.0) * np.sign(full_col)
             else:
@@ -345,10 +345,12 @@ class Grid:
             selected_cell = self.__choose_best_neighbor(dijkstra, ped)
             # Get the distance the pedestrian should move
             ped_row, ped_col, diag_bool = ped.move(selected_cell)
-
+            # if ped.id == 1:
+            #     print(ped.cell.row, ped.cell.col, ped_row, ped_col, ped.id)
             if np.abs(ped_row) >= 1.0 and np.abs(ped_col) >= 1.0:
                 # Check if the pedestrian should move a diagonally
-
+                # if ped.id == 1:
+                #     print(ped.cell.row, ped.cell.col, "MOVED")
                 ped.cell.cell_type = CellType.EMPTY
                 ped.cell.path = True
                 ped.cell = self.cells[selected_cell.row, selected_cell.col]
