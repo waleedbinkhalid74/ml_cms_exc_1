@@ -6,7 +6,6 @@ import numpy as np
 from matplotlib import colors
 
 
-
 class CellType(Enum):
     EMPTY = 0
     PEDESTRIAN = 1
@@ -25,8 +24,6 @@ class Cell:
         :param row: represents the cell position in the y-axis
         :param col: represents the cell position in the x-axis
         :param cell_type: the type of the cell
-        :param obstacle_avoidance: if false, obstacles are ignored
-
         """
         super().__init__()
         self.row: np.int = row
@@ -50,14 +47,14 @@ class Cell:
         """
 
         if obstacle_avoidance:
-            if self.cell_type.value == CellType.OBSTACLE.value:
+            if self.cell_type.value == 2:
                 return np.inf
             else:
                 return np.sqrt(np.power(self.row - other_cell.row, 2) + np.power(self.col - other_cell.col, 2))
         else:
             return np.sqrt(np.power(self.row - other_cell.row, 2) + np.power(self.col - other_cell.col, 2))
 
-    def cost_to_pedestrian(self, ped, r_max: np.float = 1.2) -> np.float:
+    def cost_to_pedestrian(self, ped, r_max: np.float = 1.5) -> np.float:
         """
         get cost added by a pedestrian to this cell
         :param ped: A pedestrian to whom to calculate the distance cost
@@ -89,12 +86,15 @@ class Pedestrian:
     """
     _id_counter: np.int = 0
 
-    def __init__(self, cell: Cell):
+    def __init__(self, cell: Cell, speed: np.float = 3.33):
         """
         Initiate the pedestrian with the given position & a unique id.
         :param cell: represents the cell where the pedestrian is standing
+        :param speed: represents the speed this pedestrian moves in cell/second
         row & col in a pedestrian serve to store partial step
-        this helps creating more accurate diagonal speed
+            this helps creating more accurate diagonal speed
+        delay is the inverse of the speed
+            i.e. the tiem the pedestrian spends in a cell millisecond/cell
         """
         super().__init__()
         Pedestrian._id_counter += 1
@@ -102,6 +102,10 @@ class Pedestrian:
         self.cell: Cell = cell
         self.row: np.float = 0
         self.col: np.float = 0
+        self.speed: np.float = speed
+        self.delay: np.int = 1000 // speed
+        self.steps: np.float = 0
+        self.last_step = 0
 
     def is_valid(self) -> bool:
         """
@@ -110,29 +114,30 @@ class Pedestrian:
         """
         return self.cell.cell_type.value == CellType.PEDESTRIAN.value
 
-    def move(self, cell: Cell) -> (np.float, np.float):
+    def move(self, cell: Cell, current_time: np.int, max_steps: int) -> (np.float, np.float):
         """
         Changes the cell the pedestrian is standing on.
+        :param max_steps:
+        :param current_time:
         :param cell: The cell where the pedestrian needs to move
-        :return: a pair of float indicating the distance & direction the pedestrian should move and a bool stating is the move is diagonal or not
+        :return: a pair of float indicating the distance & direction the pedestrian should move
         """
-        if self.cell.row != cell.row and self.cell.col != cell.col:
-            # diagonal step
-            # the pedestrian only moves 0.7 horizontally & vertically
-            full_row = self.row + (cell.row - self.cell.row) * 0.71
-            full_col = self.col + (cell.col - self.cell.col) * 0.71
-            # remove the potential 1 from self.row & self.col keeping the sign if a diagonal step can be made
-            if full_row >= 1 and full_col >= 1:
+        if (self.last_step == 0 or current_time > self.last_step + self.delay) and self.steps <= max_steps:
+            if self.cell.row != cell.row and self.cell.col != cell.col:
+                # diagonal step
+                # the pedestrian only moves 0.7 horizontally & vertically
+                full_row = self.row + (cell.row - self.cell.row) * 0.71
+                full_col = self.col + (cell.col - self.cell.col) * 0.71
+                # remove the potential 1 from self.row & self.col keeping the sign
                 self.row = (full_row % 1.0) * np.sign(full_row)
                 self.col = (full_col % 1.0) * np.sign(full_col)
+                return full_row, full_col
             else:
-                # if not accumulate the diagonal potential
-                self.row = full_row
-                self.col = full_col
-            return full_row, full_col, True
+                # straight step
+                return (cell.row - self.cell.row) * self.speed, \
+                       (cell.col - self.cell.col) * self.speed
         else:
-            # straight step, also return false to indicate that a diagonal step was not made
-            return (cell.row - self.cell.row), (cell.col - self.cell.col), False
+            return 0, 0
 
     def __str__(self):
         return f"Pedestrians {self.id} standing on {self.cell}"
@@ -149,11 +154,12 @@ class Grid:
     #######################################################################################################
     # Initialization functions
     #######################################################################################################
-    def __init__(self, rows: int, cols: int, cells: np.ndarray = None):
+    def __init__(self, rows: int, cols: int, cells: np.ndarray = None, obstacle_avoidance: bool = True):
         """
         Set up basic attributes for the GUI object
         :param rows: row size of grid
         :param cols: column size of grid
+        :param obstacle_avoidance: if false, obstacles are ignored
         """
         super().__init__()
 
@@ -180,6 +186,9 @@ class Grid:
                             for cell in row if cell.cell_type.value == 1]
         # self.get_current_state()
         self.initial_state = self.cells.copy()
+        # self.fill_distances(obstacle_avoidance=obstacle_avoidance)  # Fills the cells with the cost as a parameter
+        # to the distance to the target
+        # self.flood_dijkstra()  # Fills the cells with the cost as per the dijkstra's algorithm
 
     def assign_neighbours(self):
         """
@@ -264,14 +273,12 @@ class Grid:
             while unvisited_cells:  # While the unvisited_cells is not empty
                 cell_to_visit = min(unvisited_cells, key=lambda x: x.dijkstra_cost)
                 for straight_neighbour in cell_to_visit.straight_neighbours:
-                    if straight_neighbour.cell_type.value != CellType.OBSTACLE.value \
-                            and straight_neighbour in unvisited_cells:
+                    if straight_neighbour.cell_type.value != CellType.OBSTACLE.value:
                         dist = cell_to_visit.dijkstra_cost + cell_to_visit.get_distance(straight_neighbour)
                         if dist < straight_neighbour.dijkstra_cost:
                             straight_neighbour.dijkstra_cost = dist
                 for diagonal_neighbour in cell_to_visit.diagonal_neighbours:
-                    if diagonal_neighbour.cell_type.value != CellType.OBSTACLE.value \
-                            and diagonal_neighbour in unvisited_cells:
+                    if diagonal_neighbour.cell_type.value != CellType.OBSTACLE.value:
                         dist = cell_to_visit.dijkstra_cost + cell_to_visit.get_distance(diagonal_neighbour)
                         if dist < diagonal_neighbour.dijkstra_cost:
                             diagonal_neighbour.dijkstra_cost = dist
@@ -295,12 +302,13 @@ class Grid:
 
     def __get_cell_cost(self, dijkstra, ped, cell):
         pc = self.__pedestrians_costs(ped, cell)
+        # print("pedestrian", pc)
         if dijkstra:
             return cell.dijkstra_cost + pc
         else:
             return cell.distance_to_target + pc
 
-    def __choose_best_neighbor(self, dijkstra: bool, ped: Pedestrian):
+    def __choose_best_neighbor(self, dijkstra, ped):
         selected_cell = ped.cell
         min_distance = self.__get_cell_cost(dijkstra, ped, selected_cell)
         for nc in ped.cell.straight_neighbours:
@@ -325,7 +333,7 @@ class Grid:
                     min_distance = cell_cost
         return selected_cell
 
-    def update_grid(self, dijkstra=False, absorbing_targets=True):
+    def update_grid(self, current_time, max_steps=100, dijkstra=False, absorbing_targets=True):
         """
         this method updates moves the pedestrians who didn't reach the target yet.
         Pedestrians move horizontally & vertically one step per time step
@@ -344,27 +352,24 @@ class Grid:
         for ped in self.pedestrians:
             selected_cell = self.__choose_best_neighbor(dijkstra, ped)
             # Get the distance the pedestrian should move
-            ped_row, ped_col, diag_bool = ped.move(selected_cell)
+            ped_row, ped_col = ped.move(selected_cell, current_time=current_time, max_steps=max_steps)
 
-            if np.abs(ped_row) >= 1.0 and np.abs(ped_col) >= 1.0:
-                # Check if the pedestrian should move a diagonally
-
+            # Check if the pedestrian should move a full cell vertically
+            if np.abs(ped_row) >= 1.0:
                 ped.cell.cell_type = CellType.EMPTY
                 ped.cell.path = True
-                ped.cell = self.cells[selected_cell.row, selected_cell.col]
-            if not diag_bool:
-                # Check if the pedestrian should move horizontally/virtically
-                if np.abs(ped_row) >= 1.0 or np.abs(ped_col) >= 1.0:
+                ped.cell = self.cells[ped.cell.row + (selected_cell.row - ped.cell.row), ped.cell.col]
+                ped.steps += 1
+                ped.last_step = current_time
+
+            # Check if the pedestrian should move a full cell horizontally
+            if np.abs(ped_col) >= 1.0:
+                if np.abs(ped_row) < 1.0:
                     ped.cell.cell_type = CellType.EMPTY
                     ped.cell.path = True
-                    ped.cell = self.cells[selected_cell.row, selected_cell.col]
-
-            # TODO: Remove comment
-            # Check if the pedestrian should move a full cell horizontally
-            # if np.abs(ped_col) >= 1.0:
-            #     if np.abs(ped_row) < 1.0:
-            #         ped.cell.cell_type = CellType.EMPTY
-            #         ped.cell.path = True
+                    ped.steps += 1
+                    ped.last_step = current_time
+                ped.cell = self.cells[ped.cell.row, ped.cell.col + (selected_cell.col - ped.cell.col)]
 
             # If a target is reached remove the pedestrian provided the targets are absorbing,
             # otherwise update the new cell
@@ -380,7 +385,7 @@ class Grid:
         # Remove pedestrians who reached the target
         self.pedestrians = [ped for ped in self.pedestrians if ped not in to_remove_peds]
 
-    def simulate(self, no_of_steps, dijkstra=False, absorbing_targets=True, step_time = 300, obstacle_avoidance:bool=True):
+    def simulate(self, no_of_steps, dijkstra=False, absorbing_targets=True):
         """
         This method executes the simulation based on the type of cost function (rudementary or dijkstra assigned)
         and stores all the states of the grid in an attribute
@@ -389,16 +394,17 @@ class Grid:
         :param dijkstra: whether the cost should be based on the dijkstra's algorithm
         :return: List of past states of the scenario
         """
-        total_time = 0
         self.past_states = []
         self.cells = self.initial_state
         if dijkstra:
             self.flood_dijkstra()
         else:
-            self.fill_distances(obstacle_avoidance=obstacle_avoidance)
-        while self.pedestrians and self.time_step <= no_of_steps:
-            self.update_grid(dijkstra=dijkstra, absorbing_targets=absorbing_targets)
-        print("The simulation was took", self.time_step, "steps and was executed in", self.time_step * step_time/1000, "seconds.")
+            self.fill_distances()
+        for step in range(no_of_steps):
+            self.update_grid(1000, no_of_steps=no_of_steps, dijkstra=dijkstra, absorbing_targets=absorbing_targets)
+            if not self.pedestrians:
+                break
+        print("The simulation was took", self.time_step, "steps.")
         return self.past_states
 
     #######################################################################################################
@@ -462,9 +468,9 @@ class Grid:
         :return: Returns the numpy array that contain all the dijkstra costs for each cell.
         """
         dijkstra_array = []
-        for row_ind, row in self.cells:
+        for row in self.cells:
             d_row = []
-            for col_ind, cell in row:
+            for cell in row:
                 d_row.append(cell.dijkstra_cost)
             dijkstra_array.append(d_row)
         dijkstra_array = np.array(dijkstra_array)
@@ -501,8 +507,8 @@ class Grid:
 
     def __str__(self):
         res = ""
-        for row in self.cells:
-            for col_ind, cell in row:
+        for row_ind, row in self.cells:
+            for cell in row:
                 res += f"{cell.cell_type.value} "
             res += "\n"
         return res
