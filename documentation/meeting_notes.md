@@ -14,9 +14,10 @@
 ## Points to discuss
 1. task_4 150 pedestrians too expensive to simulate
 2. what is row and col in pedestrian. doesnt seem like coordinates. --> Qais?
-3. rimea_6 some obstacles get eated away
-4. rimea_4 is not clear. need to ask professor
-5. 
+3. rimea_1 the time from the gui is 74 seconds. this does not seem correct.
+5. rimea_4 is not clear. need to ask professor --> where are the periodic bc??
+4. rimea_6 some obstacles get eated away
+6. rimea 7, how to give individual speeds?
 
 ### Tasks
 ~~1. Setup Github~~

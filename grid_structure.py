@@ -462,7 +462,7 @@ class Grid:
         dijkstra_array = np.array(dijkstra_array)
         return dijkstra_array
 
-    def get_distance_to_target(self):
+    def get_distance_to_target(self) -> np.ndarray:
         """
         :return: Returns the numpy array that contain all the dijkstra costs for each cell.
         """
