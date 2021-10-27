@@ -6,6 +6,7 @@ import numpy as np
 from matplotlib import colors
 
 
+
 class CellType(Enum):
     EMPTY = 0
     PEDESTRIAN = 1
@@ -257,12 +258,14 @@ class Grid:
             while unvisited_cells:  # While the unvisited_cells is not empty
                 cell_to_visit = min(unvisited_cells, key=lambda x: x.dijkstra_cost)
                 for straight_neighbour in cell_to_visit.straight_neighbours:
-                    if straight_neighbour.cell_type.value != CellType.OBSTACLE.value:
+                    if straight_neighbour.cell_type.value != CellType.OBSTACLE.value \
+                            and straight_neighbour in unvisited_cells:
                         dist = cell_to_visit.dijkstra_cost + cell_to_visit.get_distance(straight_neighbour)
                         if dist < straight_neighbour.dijkstra_cost:
                             straight_neighbour.dijkstra_cost = dist
                 for diagonal_neighbour in cell_to_visit.diagonal_neighbours:
-                    if diagonal_neighbour.cell_type.value != CellType.OBSTACLE.value:
+                    if diagonal_neighbour.cell_type.value != CellType.OBSTACLE.value \
+                            and diagonal_neighbour in unvisited_cells:
                         dist = cell_to_visit.dijkstra_cost + cell_to_visit.get_distance(diagonal_neighbour)
                         if dist < diagonal_neighbour.dijkstra_cost:
                             diagonal_neighbour.dijkstra_cost = dist
@@ -292,7 +295,7 @@ class Grid:
         else:
             return cell.distance_to_target + pc
 
-    def __choose_best_neighbor(self, dijkstra, ped):
+    def __choose_best_neighbor(self, dijkstra: bool, ped: Pedestrian):
         selected_cell = ped.cell
         min_distance = self.__get_cell_cost(dijkstra, ped, selected_cell)
         for nc_ind, nc in enumerate(ped.cell.straight_neighbours):
@@ -355,7 +358,7 @@ class Grid:
         # Remove pedestrians who reached the target
         self.pedestrians = [ped for ped in self.pedestrians if ped not in to_remove_peds]
 
-    def simulate(self, no_of_steps, dijkstra=False, absorbing_targets=True):
+    def simulate(self, no_of_steps, dijkstra=False, absorbing_targets=True, step_time = 300):
         """
         This method executes the simulation based on the type of cost function (rudementary or dijkstra assigned)
         and stores all the states of the grid in an attribute
@@ -364,17 +367,16 @@ class Grid:
         :param dijkstra: whether the cost should be based on the dijkstra's algorithm
         :return: List of past states of the scenario
         """
+        total_time = 0
         self.past_states = []
         self.cells = self.initial_state
         if dijkstra:
             self.flood_dijkstra()
         else:
             self.fill_distances()
-        for step in range(no_of_steps):
+        while self.pedestrians and self.time_step <= no_of_steps:
             self.update_grid(dijkstra=dijkstra, absorbing_targets=absorbing_targets)
-            if not self.pedestrians:
-                break
-        print("The simulation was took", self.time_step, "steps.")
+        print("The simulation was took", self.time_step, "steps and was executed in", self.time_step * step_time/1000, "seconds.")
         return self.past_states
 
     #######################################################################################################
