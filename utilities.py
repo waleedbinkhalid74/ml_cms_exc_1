@@ -27,10 +27,10 @@ def parser_array2obj(array, obstacle_avoidance: bool = True) -> Grid:
     :return: Grid object
     """
     assert len(array.shape) == 2, f"The array to grid parser expects 2D array, given {array.shape}"
-    cells = np.array([[Cell(row, column, CellType(array[row, column]))
+    cells = np.array([[Cell(row, column, CellType(array[row, column]), obstacle_avoidance=obstacle_avoidance)
                        for column in range(array.shape[1])]
                       for row in range(array.shape[0])])
-    grid = Grid(array.shape[0], array.shape[1], cells, obstacle_avoidance)
+    grid = Grid(array.shape[0], array.shape[1], cells)
     grid_valid, error_msg = grid.is_valid()
     assert grid_valid, error_msg
     return grid
