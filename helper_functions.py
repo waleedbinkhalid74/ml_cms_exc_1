@@ -76,4 +76,8 @@ def measure_speed(ped_id, last_steps, row, col, cell_size):
         else:
             # straight step
             distance += 1
-    return distance * cell_size / time
+        first_cell = last_steps[step, 0]
+    if time > 0:
+        return distance * cell_size / (time / 1000)
+    else:
+        return 0
