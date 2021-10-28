@@ -53,16 +53,11 @@
 5. Update docstrings: Yiming
 6. RiMEA 4: 50x10, 0.5ped/m^2 Area=500m^2 no_od_ped=250:
    1. WALEED: Implement boundary conditions for RiMEA 4: hardcode boundary conditio and teleportation functionality.
-   2. QAIS: Measurments of speed and density:
+   2. QAIS: Measurments of speed and density: cell size in m 0.333 only do this if measureming point are available
       1. density measurements: look at the 10x10 square around measurimg cell and count the number of peds. divide by
       2. make a list of measuring points. if list if empty then measure nothing else measure the speed and density
       3. speed measurement: add attribute last 10 cells in pedestrian and then divide by the time taken for 10 steps.
 7. RiMEA 7:
    1. QAIS: Take care of speed additions
-   2. YIMING: Fill curve on figure 2 and get coeff. and construct an equation.
-
-for ped 1:no of peds:
-    while
-        random_cell selection
-        check if cell is empty
-        gird.cell = ped and create a pedestrian.
+   2. New attribute of running speed of pedestrian
+   3. YIMING: Fill curve on figure 2 and get coeff. and construct an equation.
