@@ -30,11 +30,14 @@ def create_button(screen, horz_pos: int, vert_pos: int, width: int, height: int,
     return button
 
 
-def start_game_gui(grid: Grid, max_steps: int = 200, step_time: int = 750, dijkstra=False):
+def start_game_gui(grid: Grid, max_steps: int = 200, step_time: int = 300, dijkstra=False,
+                   cell_size:np.float=0.4,  constant_speed: np.bool = True, absorbing_targets = True):
     """
     This function sets up and starts a pygame gui window to simulate a grid object
+    :param cell_size: cell dimension in meter
     :param grid: Grid object to simulate
     :param max_steps: Maximum number of simulation steps
+    :param dijkstra: Use the Dijkstra algorithm
     :param step_time: Duration of one step in milli-seconds
     :return: None
     """
@@ -66,7 +69,6 @@ def start_game_gui(grid: Grid, max_steps: int = 200, step_time: int = 750, dijks
 
     row_edge = side_edges // 2 if grid.rows >= 20 else (window_height - (grid.rows + 1) * block_size) // 2
     col_edge = side_edges // 2 if grid.cols >= 20 else (window_width - (grid.cols + 1) * block_size) // 2
-
 
     # Set game window
     screen = pygame.display.set_mode((window_width, window_height + 60))
@@ -130,18 +132,18 @@ def start_game_gui(grid: Grid, max_steps: int = 200, step_time: int = 750, dijks
                 pygame.draw.rect(screen, white, rects[i][j], 1)
 
         # Simulate one step
-        if grid.pedestrians and simulation_running \
-                and steps < max_steps and pygame.time.get_ticks() >= step_waiting_time:
-            grid.update_grid(dijkstra=dijkstra)
-            steps += 1
+        if grid.pedestrians and simulation_running and not simulation_done \
+                and steps < max_steps and \
+                (not constant_speed or pygame.time.get_ticks() >= step_waiting_time):
+            grid.update_grid(current_time=0, max_steps=100, dijkstra=dijkstra,
+                             absorbing_targets=absorbing_targets, constant_speed=constant_speed, cell_size=cell_size)
             step_waiting_time = pygame.time.get_ticks() + step_time
 
-        # # Check if the simulation is done
-        # if len(grid.pedestrians) == 0 and simulation_running:
-        #     simulation_running = False
-        #     show_results = True
+        if grid.pedestrians:
+            steps = min([ped.steps for ped in grid.pedestrians])
 
-        if len(grid.pedestrians) == 0 and simulation_running:
+        # Simulation done
+        if (not grid.pedestrians or steps >= max_steps) and simulation_running:
             simulation_total_time = (pygame.time.get_ticks() - simulation_start_time) - simulation_stoppage_time
             create_button(screen,
                           window_width // 8, window_height + 10,
@@ -192,6 +194,3 @@ def start_game_gui(grid: Grid, max_steps: int = 200, step_time: int = 750, dijks
 
         pygame.display.update()
 
-# TODO:
-#   1. Track & Show Number of steps & Real time
-#   2. Default values for initialization questions

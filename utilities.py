@@ -6,7 +6,7 @@ import csv
 import sys
 from PyQt5.QtWidgets import QApplication
 from gui import GUI
-from grid_structure import Grid, Cell, CellType, Pedestrian
+from grid_structure import *
 
 
 def parser_array2obj(array, obstacle_avoidance: bool = True) -> Grid:
@@ -58,8 +58,8 @@ def scenario_loader():
         scenario = np.array(list(csv.reader(csvfile))).astype(int)
     # Display the inital state of the scenario
     print("Initial state of the loaded scenario:")
-    cell_size_meters = float(input("Please select the size of each cell in meters. For the given scenarios "
-                                 "please refer to the discretization table in the notebook or in the README.md file."))
+    cell_size_meters = float(input("For the given scenarios please refer to the discretization table in the notebook or in the README.md file."
+                                 "Please select the size of each cell in meters: "))
     # visualize_state(scenario)
     return parser_array2obj(scenario), cell_size_meters
 
@@ -80,8 +80,9 @@ def scenario_builder():
 
     """
     # Get size of grid from user
-    cell_size_meters = float(input("Please select the size of each cell in meters. For the given scenarios "
-                                 "please refer to the discretization table in the notebook or in the README.md file."))
+    print("Initial state of the scenario builder:")
+    cell_size_meters = float(input("For the given scenarios please refer to the discretization table in the notebook or in the README.md file."
+                                 "Please select the size of each cell in meters: "))
 
     rows, cols = tuple([eval(x) for x in input("Enter the size of the grid in the format: rows, columns: ").split(',')])
     return Grid(rows, cols), cell_size_meters

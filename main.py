@@ -36,7 +36,7 @@ def crowd_simulator():
     #     assert False, "Incorrect input. Answer must be a positive integer. Please try again."
 
     step_time = int(cell_size_meters * 750) # If the cell is of 1 meter then the average speed of 1.33 m/s
-    game_gui.start_game_gui(scenario, max_steps=max_steps, dijkstra=dijkstra, step_time=step_time)
+    game_gui.start_game_gui(scenario, max_steps=max_steps, dijkstra=dijkstra, step_time=step_time, cell_size=cell_size_meters)
 
 
 def main():
