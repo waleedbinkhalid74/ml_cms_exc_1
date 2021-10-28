@@ -58,8 +58,10 @@ def scenario_loader():
         scenario = np.array(list(csv.reader(csvfile))).astype(int)
     # Display the inital state of the scenario
     print("Initial state of the loaded scenario:")
+    cell_size_meters = float(input("Please select the size of each cell in meters. For the given scenarios "
+                                 "please refer to the discretization table in the notebook or in the README.md file."))
     # visualize_state(scenario)
-    return parser_array2obj(scenario)
+    return parser_array2obj(scenario), cell_size_meters
 
 
 def scenario_builder():
@@ -78,5 +80,8 @@ def scenario_builder():
 
     """
     # Get size of grid from user
+    cell_size_meters = float(input("Please select the size of each cell in meters. For the given scenarios "
+                                 "please refer to the discretization table in the notebook or in the README.md file."))
+
     rows, cols = tuple([eval(x) for x in input("Enter the size of the grid in the format: rows, columns: ").split(',')])
-    return Grid(rows, cols)
+    return Grid(rows, cols), cell_size_meters

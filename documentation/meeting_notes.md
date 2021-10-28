@@ -32,8 +32,6 @@
 ~~9. Dijkstra algorithm: Waleed~~
 ~~10. Pedestrian and object: Qais~~
 ~~11. The cost of pedestrians should be accumulated in the normal cost of the cell(?)~~
-13. Fast Marching Algo reading: Waleed, Qais, Yiming
-14. Documentation: Waleed, Qais
 ~~15. Explaination of pedestrian interaction: Qais~~
 ~~2. Explaination of dijkstra~~
 ~~2. Explaination of rudementary obstacle avoidance: Waleed~~
@@ -45,6 +43,26 @@
 ~~16. Integrate new GUI to scenario_builder: Qais~~
 ~~17. Run tasks 1-4 and document in notebook and latex~~
 ~~18. UML diagram of the class structure: Yiming~~
-15. Add operation for ignoring neighbours that are in the visited cell in dijkstra algo: Waleed
-16. Add average pedestrian speed by speed=total distance by pedestrian at a certain point/current time passed: Qais
-17. Add speed as a variable in pedestrian.move: Qais
+~~15. Add operation for ignoring neighbours that are in the visited cell in dijkstra algo: Waleed~~
+~~15. Correct the trajectory of pedestrians in task 3~~
+
+1. Documentation: Waleed, Qais, Yiming
+2. Make a table for the discretization and scaling used in each scenario. Also add to latex: Waleed
+3. Third-person perspective reading and suggestions/corrections: Yiming
+4. RiMEA 1: Add verbose explaination on how the time step is changed based on the discritization of the cells.
+5. Update docstrings: Yiming
+6. RiMEA 4: 50x10, 0.5ped/m^2 Area=500m^2 no_od_ped=250:
+   1. WALEED: Implement boundary conditions for RiMEA 4: hardcode boundary conditio and teleportation functionality.
+   2. QAIS: Measurments of speed and density:
+      1. density measurements: look at the 10x10 square around measurimg cell and count the number of peds. divide by
+      2. make a list of measuring points. if list if empty then measure nothing else measure the speed and density
+      3. speed measurement: add attribute last 10 cells in pedestrian and then divide by the time taken for 10 steps.
+7. RiMEA 7:
+   1. QAIS: Take care of speed additions
+   2. YIMING: Fill curve on figure 2 and get coeff. and construct an equation.
+
+for ped 1:no of peds:
+    while
+        random_cell selection
+        check if cell is empty
+        gird.cell = ped and create a pedestrian.

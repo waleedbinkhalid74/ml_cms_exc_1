@@ -464,9 +464,9 @@ class Grid:
         :return: Returns the numpy array that contain all the dijkstra costs for each cell.
         """
         dijkstra_array = []
-        for row_ind, row in self.cells:
+        for row in self.cells:
             d_row = []
-            for col_ind, cell in row:
+            for cell in row:
                 d_row.append(cell.dijkstra_cost)
             dijkstra_array.append(d_row)
         dijkstra_array = np.array(dijkstra_array)

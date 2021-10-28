@@ -1,5 +1,7 @@
 references/
 *.log
+scenarios/~.*
+gui.py
 *.dvi
 *.out
 *.gz

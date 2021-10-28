@@ -20,3 +20,4 @@
    1. Should the speed be a parameter? Can we set it to constant for all pedestrians? Should we be required to change it from the gui/cli? Moreover is it required that we are able to assign a distinct speed to each pedestrian?
    2. Is it important to assign an age etc to pedestrians?
    3. Can we assign speeds to pedestrians in a hardcoded way?
+   4. What is the scenario geometry?
