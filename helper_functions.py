@@ -10,20 +10,24 @@ def document_measures(row, col, grid, cell_size, current_time, ped_id, last_step
     measuring_points_logs.close()
 
 
-def measure_density(row, col, grid, cell_size, current_time):
+def measure_density(row, col, grid, cell_size):
     """
     Grid class function
-    :param row:
-    :param col:
+    :param row: the row index of the measuring point
+    :param col: the column index of the measuring point
     :param grid: 2 Dimension numpy array represeting cells
+    :param cell_size: The scale of cell in meters
     :return:
     """
-    # Find the 10x10 square around (row,col)
-    # Count pedestrians in the square
-    # Scale the density according to cell_size
-    # Print information to file
 
-    # Count pedestrians in the square
+    # Find the 10x10 square around (row,col)
+    # The 10 rows are [row - 4, row + 5]
+    # However, if row < 4 for example 3
+    # then the rows are [0, 9]
+    # and if row = 17 out of 20 rows overall in the grid
+    # Then rows are [10, 19]
+    # Similarly for columns
+
     rows = len(grid)
     cols = len(grid[row])
 
@@ -41,24 +45,22 @@ def measure_density(row, col, grid, cell_size, current_time):
     if col < 4:
         col_max = 9 if 9 < cols else cols - 1
 
+    # Count pedestrians in the square
     pedestrians_count = len([1 for r in range(row_min, row_max)
                              for c in range(col_min, col_max) if grid[r, c] == 1])
 
+    # Scale the area according to cell_size
     measuring_area = ((row_max - row_min) * (col_max - col_min)) * (cell_size * cell_size)
 
-    density = pedestrians_count / measuring_area
-    return density
+    return pedestrians_count / measuring_area
 
 
-def measure_speed(ped_id, last_steps, row, col, cell_size):
+def measure_speed(last_steps, cell_size):
     """
     Pedestrian class function
-    :param cell_size:
-    :param ped_id:
-    :param row:
-    :param col:
     :param last_steps: Array of the shape [[[row, col], time], ...]
-    :return:
+    :param cell_size: The scale of cell in meters
+    :return: The average speed over the last_steps in meter/second
     """
     # measure the covered distance by last_steps
     # Scale the distance according to cell_size
