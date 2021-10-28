@@ -4,6 +4,7 @@ import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import colors
+from helper_functions import *
 
 
 class CellType(Enum):
@@ -106,7 +107,8 @@ class Pedestrian:
         self.speed: np.float = speed
         self.delay: np.int = 1000 // speed
         self.steps: np.float = 0
-        self.last_step = 0
+        self.last_move = 0
+        self.last_10_steps = []
 
     def is_valid(self) -> bool:
         """
@@ -114,6 +116,14 @@ class Pedestrian:
         :return: true or false
         """
         return self.cell.cell_type.value == CellType.PEDESTRIAN.value
+
+    def update_cell(self, new_cell: Cell, current_time: np.int = 0):
+        self.cell.cell_type = CellType.EMPTY
+        self.cell.path = True
+        if len(self.last_10_steps) >= 10:
+            self.last_10_steps.pop()
+        self.last_10_steps.append([self.cell, current_time])
+        self.cell = new_cell
 
     def move(self, cell: Cell, constant_speed: bool = True,
              current_time: np.int = 0, max_steps: np.int = 1000, cell_size: np.float = 0.4) \
@@ -130,8 +140,8 @@ class Pedestrian:
         """
         cell_delay = self.delay * cell_size
         if constant_speed or \
-                (current_time > self.last_step + cell_delay and self.steps <= max_steps):
-            self.last_step = current_time
+                (current_time > self.last_move + cell_delay and self.steps <= max_steps):
+            self.last_move = current_time
             self.steps += 1
             if self.cell.row != cell.row and self.cell.col != cell.col:
                 # diagonal step
@@ -199,8 +209,8 @@ class Grid:
 
         self.pedestrians = [Pedestrian(cell) for row in self.cells
                             for cell in row if cell.cell_type.value == 1]
-        # self.get_current_state()
         self.initial_state = self.cells.copy()
+        self.measuring_points = np.array([])
 
     def assign_neighbours(self):
         """
@@ -369,21 +379,20 @@ class Grid:
             # Get the distance the pedestrian should move
             ped_row, ped_col, diag_bool = ped.move(selected_cell, constant_speed=constant_speed,
                                                    current_time=current_time, max_steps=max_steps, cell_size=cell_size)
-            # if ped.id == 1:
-            #     print(ped.cell.row, ped.cell.col, ped_row, ped_col, ped.id)
+
             if np.abs(ped_row) >= 1.0 and np.abs(ped_col) >= 1.0:
                 # Check if the pedestrian should move a diagonally
-                # if ped.id == 1:
-                #     print(ped.cell.row, ped.cell.col, "MOVED")
-                ped.cell.cell_type = CellType.EMPTY
-                ped.cell.path = True
-                ped.cell = selected_cell
+                ped.update_cell(selected_cell, current_time=current_time)
+                if selected_cell in self.measuring_points:
+                    document_measures(selected_cell.row, selected_cell.col, self.to_array(),
+                                      cell_size, current_time, ped.id, ped.last_10_steps)
             if not diag_bool:
                 # Check if the pedestrian should move horizontally/virtically
                 if np.abs(ped_row) >= 1.0 or np.abs(ped_col) >= 1.0:
-                    ped.cell.cell_type = CellType.EMPTY
-                    ped.cell.path = True
-                    ped.cell = selected_cell
+                    ped.update_cell(selected_cell, current_time=current_time)
+                    if selected_cell in self.measuring_points:
+                        document_measures(selected_cell.row, selected_cell.col, self.to_array(),
+                                          cell_size, current_time, ped.id, ped.last_10_steps)
 
             # If a target is reached remove the pedestrian provided the targets are absorbing,
             # otherwise update the new cell
@@ -433,6 +442,17 @@ class Grid:
         :return: None
         """
         self.pedestrians.append(Pedestrian(self.cells[row, col], speed=speed))
+
+
+    def add_pedestrian(self, row: np.int, col: np.int) -> None:
+        """
+        Creates a new pedestrian on this grid
+        :param row: The row of the cell where the pedestrian is initially standing
+        :param col: The column of the cell where the pedestrian is initially standing
+        :param speed: (Optional) The average speed of the pedestrian in meter/second
+        :return: None
+        """
+        self.measuring_points.append(self.cells[row, col])
 
     def to_array(self) -> np.ndarray:
         """
