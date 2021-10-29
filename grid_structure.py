@@ -4,7 +4,8 @@ import numpy as np
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 from matplotlib import colors
-
+from random import seed
+from random import randint
 
 class CellType(Enum):
     EMPTY = 0
@@ -219,6 +220,7 @@ class Grid:
 
         self.rows: np.int = rows
         self.cols: np.int = cols
+        self.cell_size = 1.0
         self.time_step: np.int = 0
 
         # Attributes used for visualization and animation
@@ -235,6 +237,9 @@ class Grid:
                             for cell in row if cell.cell_type.value == 1]
         self.initial_state = self.cells.copy()
         self.measuring_points = []
+
+    def set_cell_size(self, cell_size: np.float = 1.0):
+        self.cell_size = cell_size
 
     def assign_neighbours(self):
         """
@@ -278,6 +283,23 @@ class Grid:
         if old_cell_type > 1 or new_cell_type > 1:
             self.cells[row, col].distance_to_target = np.inf if new_cell_type == CellType.OBSTACLE.value else 0
             self.cells[row, col].dijkstra_cost = 0 if new_cell_type == CellType.TARGET.value else np.inf
+
+    def flood_pedestrians(self, density=None):
+        if density is None:
+            print("Please supply a density.")
+        else:
+            grid_area = self.rows * self.cols * self.cell_size**2
+            no_of_pedestrians = int(density*grid_area)
+            print("Adding", no_of_pedestrians, "to the grid.")
+            seed(1)
+            for ped in range(no_of_pedestrians):
+                rand_row = np.random.randint(0, self.rows)
+                rand_col = np.random.randint(0, self.cols)
+                while self.cells[rand_row, rand_col].cell_type.value != CellType.PEDESTRIAN.value:
+                    rand_row = np.random.randint(0, self.rows)
+                    rand_col = np.random.randint(0, self.cols)
+                    self.add_pedestrian(rand_row, rand_col, speed=1.0)
+
 
     #######################################################################################################
     # Flood cost values functions
@@ -524,6 +546,7 @@ class Grid:
         :return: None
         """
         self.pedestrians.append(Pedestrian(self.cells[row, col], speed=speed))
+        self.cells[row, col].cell_type = CellType.PEDESTRIAN
 
     def add_measuring_point(self, row: np.int, col: np.int) -> None:
         """
