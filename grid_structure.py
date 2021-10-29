@@ -1,5 +1,6 @@
 from enum import Enum
 
+import numpy as np
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 from matplotlib import colors
@@ -100,7 +101,7 @@ class Pedestrian:
         self.row: np.float = 0
         self.col: np.float = 0
         self.speed: np.float = speed
-        self.delay: np.int = 1000 // speed
+        self.delay: np.int = 1000.0 // speed
         self.steps: np.float = 0
         self.last_move = 0
         self.last_10_steps = []
@@ -203,12 +204,11 @@ class Grid:
     #######################################################################################################
     # Initialization functions
     #######################################################################################################
-    def __init__(self, rows: int, cols: int, cells: np.ndarray = None, obstacle_avoidance: bool = True):
+    def __init__(self, rows: int, cols: int, cells: np.ndarray = None):
         """
         Set up basic attributes for the GUI object
         :param rows: row size of grid
         :param cols: column size of grid
-        :param obstacle_avoidance: if false, obstacles are ignored
         """
         super().__init__()
 
@@ -234,7 +234,7 @@ class Grid:
         self.pedestrians = [Pedestrian(cell) for row in self.cells
                             for cell in row if cell.cell_type.value == 1]
         self.initial_state = self.cells.copy()
-        self.measuring_points = np.asarray([])
+        self.measuring_points = []
 
     def assign_neighbours(self):
         """
@@ -312,25 +312,25 @@ class Grid:
         targets = [cell for row in self.cells
                    for cell in row if cell.cell_type.value == 3]
 
-        for target in targets:
-            unvisited_cells = [cell for cell in self.cells.flatten() if
-                               cell.cell_type.value is not CellType.OBSTACLE.value]
-            # Once this list is empty the algorithm is complete
-            while unvisited_cells:  # While the unvisited_cells is not empty
-                cell_to_visit = min(unvisited_cells, key=lambda x: x.dijkstra_cost)
-                for straight_neighbour in cell_to_visit.straight_neighbours:
-                    if straight_neighbour.cell_type.value != CellType.OBSTACLE.value \
-                            and straight_neighbour in unvisited_cells:
-                        dist = cell_to_visit.dijkstra_cost + cell_to_visit.get_distance(straight_neighbour)
-                        if dist < straight_neighbour.dijkstra_cost:
-                            straight_neighbour.dijkstra_cost = dist
-                for diagonal_neighbour in cell_to_visit.diagonal_neighbours:
-                    if diagonal_neighbour.cell_type.value != CellType.OBSTACLE.value \
-                            and diagonal_neighbour in unvisited_cells:
-                        dist = cell_to_visit.dijkstra_cost + cell_to_visit.get_distance(diagonal_neighbour)
-                        if dist < diagonal_neighbour.dijkstra_cost:
-                            diagonal_neighbour.dijkstra_cost = dist
-                unvisited_cells.remove(cell_to_visit)
+        # for target in targets:
+        unvisited_cells = [cell for cell in self.cells.flatten() if
+                           cell.cell_type.value is not CellType.OBSTACLE.value]
+        # Once this list is empty the algorithm is complete
+        while unvisited_cells:  # While the unvisited_cells is not empty
+            cell_to_visit = min(unvisited_cells, key=lambda x: x.dijkstra_cost)
+            for straight_neighbour in cell_to_visit.straight_neighbours:
+                if straight_neighbour.cell_type.value != CellType.OBSTACLE.value \
+                        and straight_neighbour in unvisited_cells:
+                    dist = cell_to_visit.dijkstra_cost + cell_to_visit.get_distance(straight_neighbour)
+                    if dist < straight_neighbour.dijkstra_cost:
+                        straight_neighbour.dijkstra_cost = dist
+            for diagonal_neighbour in cell_to_visit.diagonal_neighbours:
+                if diagonal_neighbour.cell_type.value != CellType.OBSTACLE.value \
+                        and diagonal_neighbour in unvisited_cells:
+                    dist = cell_to_visit.dijkstra_cost + cell_to_visit.get_distance(diagonal_neighbour)
+                    if dist < diagonal_neighbour.dijkstra_cost:
+                        diagonal_neighbour.dijkstra_cost = dist
+            unvisited_cells.remove(cell_to_visit)
 
     #######################################################################################################
     # Simulation functions
@@ -436,6 +436,9 @@ class Grid:
         This method executes the simulation based on the type of cost function (rudimentary or dijkstra assigned)
         and stores all the states of the grid in an attribute
 
+        :param obstacle_avoidance:
+        :param step_time:
+        :param absorbing_targets:
         :param no_of_steps: How many steps to simulate
         :param dijkstra: whether the cost should be based on the dijkstra's algorithm
         :return: List of past states of the scenario
@@ -465,7 +468,7 @@ class Grid:
         :param cell_size:  The scale of cell in meters
         :return:
         """
-        density = self.measure_density(measuring_point, current_time, cell_size=cell_size)
+        density = self.measure_density(measuring_point, cell_size=cell_size)
         speed = ped.measure_speed(measuring_point, cell_size=cell_size)
         measuring_points_logs = open("logs/measuring_points_logs.txt", "w+")
         measuring_points_logs.write(f"Pedestrian {ped.id} in measuring_point "
@@ -559,7 +562,8 @@ class Grid:
 
     def animate(self):
         """
-        This method creates an animation of the simulation. Note in order ot create an animation, past states need to exist.
+        This method creates an animation of the simulation.
+        Note in order ot create an animation, past states need to exist.
         :return: anim: Animation object
         """
         assert len(self.past_states) != 0
