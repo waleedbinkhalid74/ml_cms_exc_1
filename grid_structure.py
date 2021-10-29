@@ -5,7 +5,8 @@ import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 from matplotlib import colors
 from random import seed
-from random import randint
+from pathlib import Path
+
 
 class CellType(Enum):
     EMPTY = 0
@@ -178,7 +179,7 @@ class Pedestrian:
         first_cell = last_steps[0, 0]
         for step in range(1, len(last_steps)):
             time = last_steps[step, 1] - initial_time
-            if last_steps[step, 0].row != first_cell.cell and last_steps[step, 0].col != first_cell.col:
+            if last_steps[step, 0].row != first_cell.row and last_steps[step, 0].col != first_cell.col:
                 # diagonal step
                 distance += 1.42
             else:
@@ -205,7 +206,7 @@ class Grid:
     #######################################################################################################
     # Initialization functions
     #######################################################################################################
-    def __init__(self, rows: int, cols: int, cells: np.ndarray = None):
+    def __init__(self, rows: int, cols: int, cells: np.ndarray = None, cell_size: np.float = 1.0):
         """
         Set up basic attributes for the GUI object
         :param rows: row size of grid
@@ -220,7 +221,7 @@ class Grid:
 
         self.rows: np.int = rows
         self.cols: np.int = cols
-        self.cell_size = 1.0
+        self.cell_size = cell_size
         self.time_step: np.int = 0
 
         # Attributes used for visualization and animation
@@ -284,7 +285,12 @@ class Grid:
             self.cells[row, col].distance_to_target = np.inf if new_cell_type == CellType.OBSTACLE.value else 0
             self.cells[row, col].dijkstra_cost = 0 if new_cell_type == CellType.TARGET.value else np.inf
 
-    def flood_pedestrians(self, density=None):
+    def flood_pedestrians(self, density):
+        """
+        Floods the grid with pedestrians randomly based on a given density.
+        :param density: pedestrians / meter. Please note that this is pedestrians per meter and not per cell!
+        :return:
+        """
         if density is None:
             print("Please supply a density.")
         else:
@@ -295,10 +301,10 @@ class Grid:
             for ped in range(no_of_pedestrians):
                 rand_row = np.random.randint(0, self.rows)
                 rand_col = np.random.randint(0, self.cols)
-                while self.cells[rand_row, rand_col].cell_type.value != CellType.PEDESTRIAN.value:
+                while self.cells[rand_row, rand_col].cell_type.value != CellType.EMPTY.value:
                     rand_row = np.random.randint(0, self.rows)
                     rand_col = np.random.randint(0, self.cols)
-                    self.add_pedestrian(rand_row, rand_col, speed=1.0)
+                self.add_pedestrian(rand_row, rand_col, speed=1.0)
 
 
     #######################################################################################################
@@ -414,6 +420,7 @@ class Grid:
         absorbing_targets: decides if the pedestrians disappear once they reach the target
         :return: None
         """
+        cell_size = self.cell_size
         self.time_step += 1
         # save the current state of the grid
         if constant_speed:
@@ -487,15 +494,23 @@ class Grid:
         :param measuring_point: The current measuring point cell
         :param current_time: Time since the start of the simulation in milliseconds
         :param ped: the pedestrian passing through the measuring point
-        :param cell_size:  The scale of cell in meters
+        :param cell_size:  The length of cell in meters
         :return:
         """
         density = self.measure_density(measuring_point, cell_size=cell_size)
-        speed = ped.measure_speed(measuring_point, cell_size=cell_size)
-        measuring_points_logs = open("logs/measuring_points_logs.txt", "w+")
-        measuring_points_logs.write(f"Pedestrian {ped.id} in measuring_point "
-                                    f"({measuring_point.row}, {measuring_point.col}) at time {current_time}"
-                                    f"density = {density}   speed = {speed}")
+        speed = ped.measure_speed(cell_size=cell_size)
+        if Path("./logs/measuring_points_logs.txt").exists():
+            # Append to file
+            measuring_points_logs = open("./logs/measuring_points_logs.txt", "a")
+            measuring_points_logs.write(f"Pedestrian {ped.id} in measuring_point "
+                                        f"({measuring_point.row}, {measuring_point.col}) at time {current_time}"
+                                        f"density = {density}   speed = {speed}\n")
+        else:
+            # Create file if it doesnt exist and write data
+            measuring_points_logs = open("./logs/measuring_points_logs.txt", "w+")
+            measuring_points_logs.write(f"Pedestrian {ped.id} in measuring_point "
+                                        f"({measuring_point.row}, {measuring_point.col}) at time {current_time}"
+                                        f"density = {density}   speed = {speed}\n")
         measuring_points_logs.close()
 
     def measure_density(self, measuring_point, cell_size: np.float = 0.4):
