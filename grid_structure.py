@@ -2,9 +2,7 @@ from enum import Enum
 
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
-import numpy as np
 from matplotlib import colors
-from helper_functions import *
 
 
 class CellType(Enum):
@@ -48,11 +46,8 @@ class Cell:
         :return: euclidean distance as a np.float
         """
 
-        if obstacle_avoidance:
-            if self.cell_type.value == CellType.OBSTACLE.value:
-                return np.inf
-            else:
-                return np.sqrt(np.power(self.row - other_cell.row, 2) + np.power(self.col - other_cell.col, 2))
+        if obstacle_avoidance and self.cell_type.value == CellType.OBSTACLE.value:
+            return np.inf
         else:
             return np.sqrt(np.power(self.row - other_cell.row, 2) + np.power(self.col - other_cell.col, 2))
 
@@ -77,8 +72,8 @@ class Cell:
         return self.row == other_cell.row and self.col == other_cell.col
 
     def __ge__(self, other_cell):
-        return self.distance_to_target + self.cost >= \
-               other_cell.distance_to_target + other_cell.cost
+        return self.distance_to_target >= \
+               other_cell.distance_to_target
 
 
 class Pedestrian:
@@ -164,6 +159,35 @@ class Pedestrian:
         else:
             return 0, 0
 
+    def measure_speed(self, cell_size: np.float = 0.4):
+        """
+        Pedestrian class function
+        :param cell_size: The scale of cell in meters
+        :return: The average speed over the last_steps in meter/second
+        """
+        # measure the covered distance by last_steps
+        # Scale the distance according to cell_size
+        # get the speed by dividing distance / (last_time - first_time)
+
+        distance = 0
+        time = 0
+        last_steps = np.asarray(self.last_10_steps)
+        initial_time = last_steps[0, 1]
+        first_cell = last_steps[0, 0]
+        for step in range(1, len(last_steps)):
+            time = last_steps[step, 1] - initial_time
+            if last_steps[step, 0].row != first_cell.cell and last_steps[step, 0].col != first_cell.col:
+                # diagonal step
+                distance += 1.42
+            else:
+                # straight step
+                distance += 1.0
+            first_cell = last_steps[step, 0]
+        if time > 0:
+            return distance * cell_size / (time / 1000)
+        else:
+            return 0
+
     def __str__(self):
         return f"Pedestrians {self.id} standing on {self.cell}"
 
@@ -202,7 +226,7 @@ class Grid:
         self.cmap = colors.ListedColormap(['blue', 'red', 'yellow', 'green'])
         self.animation = None
         if cells is None:
-            self.cells = np.array([[Cell(row, column) for column in range(cols)] for row in range(rows)])
+            self.cells = np.asarray([[Cell(row, column) for column in range(cols)] for row in range(rows)])
         else:
             self.cells = cells
         self.assign_neighbours()
@@ -210,7 +234,7 @@ class Grid:
         self.pedestrians = [Pedestrian(cell) for row in self.cells
                             for cell in row if cell.cell_type.value == 1]
         self.initial_state = self.cells.copy()
-        self.measuring_points = np.array([])
+        self.measuring_points = np.asarray([])
 
     def assign_neighbours(self):
         """
@@ -271,7 +295,7 @@ class Grid:
                 min_dist = np.inf
                 for target in targets:
                     distance = cell.get_distance(target, obstacle_avoidance)
-                    if cell.get_distance(target, obstacle_avoidance) < min_dist:
+                    if distance < min_dist:
                         cell.distance_to_target = distance
                         min_dist = distance
 
@@ -384,15 +408,13 @@ class Grid:
                 # Check if the pedestrian should move a diagonally
                 ped.update_cell(selected_cell, current_time=current_time)
                 if selected_cell in self.measuring_points:
-                    document_measures(selected_cell.row, selected_cell.col, self.to_array(),
-                                      cell_size, current_time, ped.id, ped.last_10_steps)
+                    self.document_measures(selected_cell, current_time, ped, cell_size=cell_size)
             if not diag_bool:
-                # Check if the pedestrian should move horizontally/virtically
+                # Check if the pedestrian should move horizontally/vertically
                 if np.abs(ped_row) >= 1.0 or np.abs(ped_col) >= 1.0:
                     ped.update_cell(selected_cell, current_time=current_time)
                     if selected_cell in self.measuring_points:
-                        document_measures(selected_cell.row, selected_cell.col, self.to_array(),
-                                          cell_size, current_time, ped.id, ped.last_10_steps)
+                        self.document_measures(selected_cell, current_time, ped, cell_size=cell_size)
 
             # If a target is reached remove the pedestrian provided the targets are absorbing,
             # otherwise update the new cell
@@ -433,7 +455,64 @@ class Grid:
     #######################################################################################################
     # Visiulization functions
     #######################################################################################################
-    def add_pedestrian(self, row: np.int, col: np.int, speed: np.float=1.33) -> None:
+
+    def document_measures(self, measuring_point, current_time, ped, cell_size: np.float = 0.4):
+        """
+
+        :param measuring_point: The current measuring point cell
+        :param current_time: Time since the start of the simulation in milliseconds
+        :param ped: the pedestrian passing through the measuring point
+        :param cell_size:  The scale of cell in meters
+        :return:
+        """
+        density = self.measure_density(measuring_point, current_time, cell_size=cell_size)
+        speed = ped.measure_speed(measuring_point, cell_size=cell_size)
+        measuring_points_logs = open("logs/measuring_points_logs.txt", "w+")
+        measuring_points_logs.write(f"Pedestrian {ped.id} in measuring_point "
+                                    f"({measuring_point.row}, {measuring_point.col}) at time {current_time}"
+                                    f"density = {density}   speed = {speed}")
+        measuring_points_logs.close()
+
+    def measure_density(self, measuring_point, cell_size: np.float = 0.4):
+        """
+        Grid class function
+        :param measuring_point: The current measuring point cell
+        :param cell_size: The scale of cell in meters
+        :return:
+        """
+
+        # Find the 10x10 square around (row,col)
+        # The 10 rows are [row - 4, row + 5]
+        # However, if row < 4 for example 3
+        # then the rows are [0, 9]
+        # and if row = 17 out of 20 rows overall in the grid
+        # Then rows are [10, 19]
+        # Similarly for columns
+
+        row_min = measuring_point.row - 4 if measuring_point.row >= 4 else 0
+        row_max = measuring_point.row + 5 if measuring_point.row + 5 < self.rows else self.rows - 1
+        if self.rows - row_max < 5:
+            row_min = 10 - (self.rows - measuring_point.row) if 10 - (self.rows - measuring_point.row) >= 0 else 0
+        if measuring_point.row < 4:
+            row_max = 9 if 9 < self.rows else self.rows - 1
+
+        col_min = measuring_point.col - 4 if measuring_point.col >= 4 else 0
+        col_max = measuring_point.col + 5 if measuring_point.col + 5 < self.cols else self.cols - 1
+        if self.cols - col_max < 5:
+            col_min = 10 - (self.cols - measuring_point.col) if 10 - (self.cols - measuring_point.col) >= 0 else 0
+        if measuring_point.col < 4:
+            col_max = 9 if 9 < self.cols else self.cols - 1
+
+        # Count pedestrians in the square
+        pedestrians_count = len([1 for r in range(row_min, row_max)
+                                 for c in range(col_min, col_max) if self.cells[r, c].cell_type.value == 1])
+
+        # Scale the area according to cell_size
+        measuring_area = ((row_max - row_min) * (col_max - col_min)) * (cell_size * cell_size)
+
+        return pedestrians_count / measuring_area
+
+    def add_pedestrian(self, row: np.int, col: np.int, speed: np.float = 1.33) -> None:
         """
         Creates a new pedestrian on this grid
         :param row: The row of the cell where the pedestrian is initially standing
@@ -443,13 +522,11 @@ class Grid:
         """
         self.pedestrians.append(Pedestrian(self.cells[row, col], speed=speed))
 
-
-    def add_pedestrian(self, row: np.int, col: np.int) -> None:
+    def add_measuring_point(self, row: np.int, col: np.int) -> None:
         """
         Creates a new pedestrian on this grid
         :param row: The row of the cell where the pedestrian is initially standing
         :param col: The column of the cell where the pedestrian is initially standing
-        :param speed: (Optional) The average speed of the pedestrian in meter/second
         :return: None
         """
         self.measuring_points.append(self.cells[row, col])
@@ -468,7 +545,7 @@ class Grid:
 
         :return: numpy array
         """
-        array = np.array([[cell.cell_type.value for cell in row] for row in self.cells])
+        array = np.asarray([[cell.cell_type.value for cell in row] for row in self.cells])
         return array
 
     def animation_frame(self, i):
@@ -517,7 +594,7 @@ class Grid:
             for cell in row:
                 d_row.append(cell.dijkstra_cost)
             dijkstra_array.append(d_row)
-        dijkstra_array = np.array(dijkstra_array)
+        dijkstra_array = np.asarray(dijkstra_array)
         return dijkstra_array
 
     def get_distance_to_target(self) -> np.ndarray:
@@ -530,7 +607,7 @@ class Grid:
             for cell in row:
                 d_row.append(cell.distance_to_target)
             dist_to_target.append(d_row)
-        dist_to_target = np.array(dist_to_target)
+        dist_to_target = np.asarray(dist_to_target)
         return dist_to_target
 
     def is_valid(self):

@@ -1,5 +1,3 @@
-import ctypes
-
 import pygame
 
 from grid_structure import *
@@ -31,7 +29,7 @@ def create_button(screen, horz_pos: int, vert_pos: int, width: int, height: int,
 
 
 def start_game_gui(grid: Grid, max_steps: int = 200, step_time: int = 300, dijkstra=False,
-                   cell_size:np.float=0.4,  constant_speed: np.bool = True, absorbing_targets = True):
+                   cell_size: np.float = 0.4, constant_speed: np.bool = True, absorbing_targets=True):
     """
     This function sets up and starts a pygame gui window to simulate a grid object
     :param cell_size: cell dimension in meter
@@ -193,4 +191,3 @@ def start_game_gui(grid: Grid, max_steps: int = 200, step_time: int = 300, dijks
                             grid.change_cell_type(i, j)
 
         pygame.display.update()
-
