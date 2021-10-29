@@ -29,7 +29,8 @@ def create_button(screen, horz_pos: int, vert_pos: int, width: int, height: int,
 
 
 def start_game_gui(grid: Grid, max_steps: int = 200, step_time: int = 300, dijkstra=False,
-                   cell_size: np.float = 0.4, constant_speed: np.bool = True, absorbing_targets=True):
+                   cell_size: np.float = 0.4, constant_speed: np.bool = True,
+                   absorbing_targets=True, periodic_boundary: bool=False):
     """
     This function sets up and starts a pygame gui window to simulate a grid object
     :param cell_size: cell dimension in meter
@@ -134,7 +135,8 @@ def start_game_gui(grid: Grid, max_steps: int = 200, step_time: int = 300, dijks
                 and steps < max_steps and \
                 (not constant_speed or pygame.time.get_ticks() >= step_waiting_time):
             grid.update_grid(current_time=0, max_steps=100, dijkstra=dijkstra,
-                             absorbing_targets=absorbing_targets, constant_speed=constant_speed, cell_size=cell_size)
+                             absorbing_targets=absorbing_targets, constant_speed=constant_speed,
+                             cell_size=cell_size, periodic_boundary=periodic_boundary)
             step_waiting_time = pygame.time.get_ticks() + step_time
 
         if grid.pedestrians:

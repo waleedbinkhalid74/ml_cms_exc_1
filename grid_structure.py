@@ -1,12 +1,12 @@
+from datetime import datetime
 from enum import Enum
-
 import numpy as np
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 from matplotlib import colors
 from random import seed
 from pathlib import Path
-
+import csv
 
 class CellType(Enum):
     EMPTY = 0
@@ -164,7 +164,7 @@ class Pedestrian:
 
     def measure_speed(self, cell_size: np.float = 0.4):
         """
-        Pedestrian class function
+        Pedestrian class function that measures the speed of the pedestrain considering its last_steps steps
         :param cell_size: The scale of cell in meters
         :return: The average speed over the last_steps in meter/second
         """
@@ -179,6 +179,7 @@ class Pedestrian:
         first_cell = last_steps[0, 0]
         for step in range(1, len(last_steps)):
             time = last_steps[step, 1] - initial_time
+            time = time.total_seconds()
             if last_steps[step, 0].row != first_cell.row and last_steps[step, 0].col != first_cell.col:
                 # diagonal step
                 distance += 1.42
@@ -187,7 +188,7 @@ class Pedestrian:
                 distance += 1.0
             first_cell = last_steps[step, 0]
         if time > 0:
-            return distance * cell_size / (time / 1000)
+            return distance * cell_size / (time)
         else:
             return 0
 
@@ -306,6 +307,19 @@ class Grid:
                     rand_col = np.random.randint(0, self.cols)
                 self.add_pedestrian(rand_row, rand_col, speed=1.0)
 
+    def check_if_neighbour_is_target(self, cell: Cell) -> bool:
+        """
+        Checks if the neighbours of a cell are a target.
+        :param cell: The cell in question
+        :return: True if a target is the neighbour otherwise False
+        """
+        for neighbour in cell.straight_neighbours:
+            if neighbour.cell_type.value == CellType.TARGET.value:
+                return True
+        for neighbour in cell.diagonal_neighbours:
+            if neighbour.cell_type.value == CellType.TARGET.value:
+                return True
+        return False
 
     #######################################################################################################
     # Flood cost values functions
@@ -409,7 +423,8 @@ class Grid:
         return selected_cell
 
     def update_grid(self, current_time=0, max_steps=100, dijkstra=False,
-                    absorbing_targets=True, constant_speed=True, cell_size: np.float = 0.4):
+                    absorbing_targets=True, constant_speed=True, cell_size: np.float = 0.4,
+                    periodic_boundary: bool=False):
         """
         this method updates moves the pedestrians who didn't reach the target yet.
         Pedestrians move horizontally & vertically one step per time step
@@ -418,8 +433,11 @@ class Grid:
 
         dijkstra: whether to sue the dijkstra algorithm for cost calculations or not
         absorbing_targets: decides if the pedestrians disappear once they reach the target
+        :param periodic_boundary: flag to identify if the right boundary is periodic. Currently only works with
+                                    RiMEA 4 case
         :return: None
         """
+        current_time = datetime.now()
         cell_size = self.cell_size
         self.time_step += 1
         # save the current state of the grid
@@ -428,6 +446,18 @@ class Grid:
         # pedestrians who reached the target
         to_remove_peds = []
         for ped in self.pedestrians:
+            if periodic_boundary:
+                if self.check_if_neighbour_is_target(ped.cell):
+                    next_row = ped.cell.row
+                    next_col = 0
+                    # Teleport the pedestrian to the start if the periodic BC are activated.
+                    # This only works for RiMEA 4 currently
+                    if self.cells[next_row, next_col].cell_type.value == CellType.EMPTY.value:
+                        ped.update_cell(self.cells[next_row, next_col], current_time=current_time)
+                    # If the first cell is not free then make the pedestrian wait.
+                    else:
+                        continue
+
             selected_cell = self.__choose_best_neighbor(dijkstra, ped)
             # Get the distance the pedestrian should move
             ped_row, ped_col, diag_bool = ped.move(selected_cell, constant_speed=constant_speed,
@@ -501,16 +531,17 @@ class Grid:
         speed = ped.measure_speed(cell_size=cell_size)
         if Path("./logs/measuring_points_logs.txt").exists():
             # Append to file
-            measuring_points_logs = open("./logs/measuring_points_logs.txt", "a")
-            measuring_points_logs.write(f"Pedestrian {ped.id} in measuring_point "
-                                        f"({measuring_point.row}, {measuring_point.col}) at time {current_time}"
-                                        f"density = {density}   speed = {speed}\n")
+            measuring_points_logs = open("./logs/measuring_points_logs.csv", "a", newline="")
+            measuring_points_row = [ped.id, measuring_point.row, measuring_point.col, current_time.strftime("%H:%M:%S"), density, speed]
+            writer = csv.writer(measuring_points_logs)
+            writer.writerow(measuring_points_row)
         else:
-            # Create file if it doesnt exist and write data
-            measuring_points_logs = open("./logs/measuring_points_logs.txt", "w+")
-            measuring_points_logs.write(f"Pedestrian {ped.id} in measuring_point "
-                                        f"({measuring_point.row}, {measuring_point.col}) at time {current_time}"
-                                        f"density = {density}   speed = {speed}\n")
+            measuring_points_logs = open("./logs/measuring_points_logs.csv", "a", newline="")
+            headers = ["Pedestrian_id", "measuring_row", "measuring_col", "time", "density", "speed"]
+            writer = csv.writer(measuring_points_logs)
+            writer.writerow(headers)
+            measuring_points_row = [ped.id, measuring_point.row, measuring_point.col, current_time.strftime("%H:%M:%S"), density, speed]
+            writer.writerow(measuring_points_row)
         measuring_points_logs.close()
 
     def measure_density(self, measuring_point, cell_size: np.float = 0.4):
