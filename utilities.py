@@ -187,19 +187,24 @@ def execute_rimea_4():
 
     start_game_gui(rimea_4_1, max_steps=30, dijkstra=False, step_time=750 * cell_size_meters,
                    cell_size=cell_size_meters, periodic_boundary=True)
+    copyfile("./logs/measuring_points_logs.csv", "./logs/measuring_points_logs_rimea_4_density1.csv")
+
     start_game_gui(rimea_4_2, max_steps=30, dijkstra=False, step_time=750 * cell_size_meters,
                    cell_size=cell_size_meters, periodic_boundary=True)
+    copyfile("./logs/measuring_points_logs.csv", "./logs/measuring_points_logs_rimea_4_density2.csv")
+
     start_game_gui(rimea_4_3, max_steps=30, dijkstra=False, step_time=750 * cell_size_meters,
                    cell_size=cell_size_meters, periodic_boundary=True)
+    copyfile("./logs/measuring_points_logs.csv", "./logs/measuring_points_logs_rimea_4_density3.csv")
+
     start_game_gui(rimea_4_4, max_steps=30, dijkstra=False, step_time=750 * cell_size_meters,
                    cell_size=cell_size_meters, periodic_boundary=True)
+    copyfile("./logs/measuring_points_logs.csv", "./logs/measuring_points_logs_rimea_4_density4.csv")
+
     start_game_gui(rimea_4_5, max_steps=30, dijkstra=False, step_time=750 * cell_size_meters,
                    cell_size=cell_size_meters, periodic_boundary=True)
+    copyfile("./logs/measuring_points_logs.csv", "./logs/measuring_points_logs_rimea_4_density5.csv")
+
     start_game_gui(rimea_4_6, max_steps=30, dijkstra=False, step_time=750 * cell_size_meters,
                    cell_size=cell_size_meters, periodic_boundary=True)
-    copyfile("./logs/measuring_points_logs.csv", "./logs/measuring_points_logs_rimea_4_density1.csv")
-    copyfile("./logs/measuring_points_logs.csv", "./logs/measuring_points_logs_rimea_4_density2.csv")
-    copyfile("./logs/measuring_points_logs.csv", "./logs/measuring_points_logs_rimea_4_density3.csv")
-    copyfile("./logs/measuring_points_logs.csv", "./logs/measuring_points_logs_rimea_4_density4.csv")
-    copyfile("./logs/measuring_points_logs.csv", "./logs/measuring_points_logs_rimea_4_density5.csv")
     copyfile("./logs/measuring_points_logs.csv", "./logs/measuring_points_logs_rimea_4_density6.csv")

@@ -179,7 +179,7 @@ class Pedestrian:
         first_cell = last_steps[0, 0]
         for step in range(1, len(last_steps)):
             time = last_steps[step, 1] - initial_time
-            time = time.total_seconds()
+            # time = time.total_seconds()
             if last_steps[step, 0].row != first_cell.row and last_steps[step, 0].col != first_cell.col:
                 # diagonal step
                 distance += 1.42
@@ -188,7 +188,7 @@ class Pedestrian:
                 distance += 1.0
             first_cell = last_steps[step, 0]
         if time > 0:
-            return distance * cell_size / (time)
+            return distance * cell_size / (time / 1000)
         else:
             return 0
 
@@ -437,7 +437,7 @@ class Grid:
                                     RiMEA 4 case
         :return: None
         """
-        current_time = datetime.now()
+        # current_time = datetime.now()
         cell_size = self.cell_size
         self.time_step += 1
         # save the current state of the grid
@@ -529,10 +529,10 @@ class Grid:
         """
         density = self.measure_density(measuring_point, cell_size=cell_size)
         speed = ped.measure_speed(cell_size=cell_size)
-        if Path("./logs/measuring_points_logs.txt").exists():
+        if Path("./logs/measuring_points_logs.csv").exists():
             # Append to file
             measuring_points_logs = open("./logs/measuring_points_logs.csv", "a", newline="")
-            measuring_points_row = [ped.id, measuring_point.row, measuring_point.col, current_time.strftime("%H:%M:%S"), density, speed]
+            measuring_points_row = [ped.id, measuring_point.row, measuring_point.col, current_time, density, speed]
             writer = csv.writer(measuring_points_logs)
             writer.writerow(measuring_points_row)
         else:
@@ -540,7 +540,7 @@ class Grid:
             headers = ["Pedestrian_id", "measuring_row", "measuring_col", "time", "density", "speed"]
             writer = csv.writer(measuring_points_logs)
             writer.writerow(headers)
-            measuring_points_row = [ped.id, measuring_point.row, measuring_point.col, current_time.strftime("%H:%M:%S"), density, speed]
+            measuring_points_row = [ped.id, measuring_point.row, measuring_point.col, current_time, density, speed]
             writer.writerow(measuring_points_row)
         measuring_points_logs.close()
 
@@ -577,7 +577,6 @@ class Grid:
         # Count pedestrians in the square
         pedestrians_count = len([1 for r in range(row_min, row_max)
                                  for c in range(col_min, col_max) if self.cells[r, c].cell_type.value == 1])
-
         # Scale the area according to cell_size
         measuring_area = ((row_max - row_min) * (col_max - col_min)) * (cell_size * cell_size)
 
