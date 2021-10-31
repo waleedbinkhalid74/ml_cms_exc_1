@@ -120,7 +120,7 @@ class Pedestrian:
         self.cell.path = True
         if len(self.last_10_steps) >= 10:
             self.last_10_steps.pop(0)
-        self.last_10_steps.append([self.cell, current_time])
+        self.last_10_steps.append([self.cell, self.delay * self.steps])
         self.cell = new_cell
 
     def move(self, cell: Cell, constant_speed: bool = True,
@@ -178,8 +178,8 @@ class Pedestrian:
         initial_time = last_steps[0, 1]
         final_time = last_steps[-1, 1]
         first_cell = last_steps[0, 0]
-        time = final_time - initial_time
-        for step in range(1, len(last_steps)):
+        time = (final_time - initial_time) * cell_size
+        for step in range(len(last_steps)):
             # time = last_steps[step, 1] - initial_time
             # time = time.total_seconds()
             if last_steps[step, 0].row != first_cell.row and last_steps[step, 0].col != first_cell.col:
@@ -189,7 +189,7 @@ class Pedestrian:
                 # straight step
                 distance += 1.0
             first_cell = last_steps[step, 0]
-        print(initial_time, final_time, time, distance)
+        # print(initial_time, final_time, time, distance)
         if time > 0:
             return distance * cell_size / (time / 1000)
         else:

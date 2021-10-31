@@ -134,7 +134,7 @@ def start_game_gui(grid: Grid, max_steps: int = 200, step_time: int = 300, dijks
         if grid.pedestrians and simulation_running and not simulation_done \
                 and steps < max_steps and \
                 (not constant_speed or pygame.time.get_ticks() >= step_waiting_time):
-            grid.update_grid(current_time=pygame.time.get_ticks(), max_steps=100, dijkstra=dijkstra,
+            grid.update_grid(current_time=(pygame.time.get_ticks() - simulation_start_time) - simulation_stoppage_time, max_steps=100, dijkstra=dijkstra,
                              absorbing_targets=absorbing_targets, constant_speed=constant_speed,
                              cell_size=cell_size, periodic_boundary=periodic_boundary)
             step_waiting_time = pygame.time.get_ticks() + step_time
