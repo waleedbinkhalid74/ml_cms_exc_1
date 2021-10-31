@@ -155,6 +155,7 @@ class Pedestrian:
         :param current_time:
         :return: None
         """
+        self.steps += 1
         self.cell.cell_type = CellType.EMPTY
         self.cell.path = True
         if len(self.last_10_steps) >= 10:
@@ -183,7 +184,6 @@ class Pedestrian:
         if constant_speed or \
                 (current_time > self.last_move + cell_delay and self.steps <= max_steps):
             self.last_move = current_time
-            self.steps += 1
             if self.cell.row != cell.row and self.cell.col != cell.col:
                 # diagonal step
                 # the pedestrian only moves 0.7 horizontally & vertically
@@ -224,7 +224,7 @@ class Pedestrian:
         final_time = last_steps[-1, 1]
         first_cell = last_steps[0, 0]
         time = (final_time - initial_time) * cell_size
-        for step in range(len(last_steps)):
+        for step in range(1, len(last_steps)):
             # time = last_steps[step, 1] - initial_time
             # time = time.total_seconds()
             if last_steps[step, 0].row != first_cell.row and last_steps[step, 0].col != first_cell.col:
