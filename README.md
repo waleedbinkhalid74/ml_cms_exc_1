@@ -20,3 +20,6 @@ In order to execute the Crowd Simulation
 
 In order to see step by step explaination refer to
 ```cellular_automata_exc_1.ipynb```
+
+
+![Image text](https://raw.githubusercontent.com/waleedbinkhalid74/ml_cms_exc_1/develop/figures/PyGame_grid.png?token=AWEFHK6GPEBKBQULUOA5RUDBPZB6Y)
