@@ -30,7 +30,7 @@ set up your own scenarios at will.
 If you choose a given scenario, you need answer the following questions by input from command line.
 Firstly, you need to input y to load a given scenario
 
-![Image text](https://raw.githubusercontent.com/waleedbinkhalid74/ml_cms_exc_1/develop/figures/y_question1.jpg?token=AWEFHK765UPI5WQACXJ444DBPZF3U)
+![Image text](https://github.com/waleedbinkhalid74/ml_cms_exc_1/blob/develop/figures/y_question1.jpg)
 
 Seconly, you need to select a scenario number from the given list
 
