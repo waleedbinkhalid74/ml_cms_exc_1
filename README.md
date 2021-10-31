@@ -48,6 +48,11 @@ After that, you can see a loaded scenario on you screen. Please choose start but
 
 ![Image text](https://github.com/waleedbinkhalid74/ml_cms_exc_1/blob/develop/figures/Given_scenariojpg.jpg)
 
+If you would like to set up your own scenario, you need to input n for the first question.
+
+![Image text](https://raw.githubusercontent.com/waleedbinkhalid74/ml_cms_exc_1/develop/figures/y_question1.jpg?token=AWEFHK765UPI5WQACXJ444DBPZF3U)
+
+
 ![Image text](https://raw.githubusercontent.com/waleedbinkhalid74/ml_cms_exc_1/develop/figures/GUI_interface.jpg?token=AWEFHKZX76WTRXSBPKVQDPLBPZDLQ)
 
 ![Image text](https://raw.githubusercontent.com/waleedbinkhalid74/ml_cms_exc_1/develop/figures/PyGame_grid.png?token=AWEFHK6GPEBKBQULUOA5RUDBPZB6Y)
