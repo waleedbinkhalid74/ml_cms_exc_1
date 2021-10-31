@@ -29,14 +29,23 @@ set up your own scenarios at will.
 
 If you choose a given scenario, you need answer the following questions by input from command line.
 Firstly, you need to input y to load a given scenario
+
 ![Image text](https://raw.githubusercontent.com/waleedbinkhalid74/ml_cms_exc_1/develop/figures/y_question1.jpg?token=AWEFHK2RQJD6YMHVUZER3GLBPZE3M)
+
 Seconly, you need to select a scenario number from the given list
+
 ![Image text](https://raw.githubusercontent.com/waleedbinkhalid74/ml_cms_exc_1/develop/figures/y_question2.jpg?token=AWEFHK4VD2BBQMX6LL3AIZTBPZE5U)
+
 Next, please choose to use Dijkstra algorithm or not
+
 ![Image text](https://raw.githubusercontent.com/waleedbinkhalid74/ml_cms_exc_1/develop/figures/y_quetion3.jpg?token=AWEFHK6RV5OYZ2VPZU7PDD3BPZE6Y)
+
 Finally, determine a mamximum steps for simulation
+
 ![Image text](https://raw.githubusercontent.com/waleedbinkhalid74/ml_cms_exc_1/develop/figures/y_question4.jpg?token=AWEFHKYS6S3VG3Y4J3P6UA3BPZFAC)
+
 After that, you can see a loaded scenario on you screen. Please choose start button to begin your simulation. Also you can choose pause button while simulating to check each step
+
 ![Image text](https://github.com/waleedbinkhalid74/ml_cms_exc_1/blob/develop/figures/Given_scenariojpg.jpg)
 
 ![Image text](https://raw.githubusercontent.com/waleedbinkhalid74/ml_cms_exc_1/develop/figures/GUI_interface.jpg?token=AWEFHKZX76WTRXSBPKVQDPLBPZDLQ)
