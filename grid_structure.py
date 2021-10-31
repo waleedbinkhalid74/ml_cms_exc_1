@@ -7,6 +7,8 @@ from matplotlib import colors
 from random import seed
 from pathlib import Path
 import csv
+import scipy.interpolate as spi
+
 
 class CellType(Enum):
     EMPTY = 0
@@ -86,7 +88,7 @@ class Pedestrian:
     """
     _id_counter: np.int = 0
 
-    def __init__(self, cell: Cell, speed: np.float = 1.33):
+    def __init__(self, cell: Cell, speed: np.float = 1.33, age: np.int = 20):
         """
         Initiate the pedestrian with the given position & a unique id.
         :param cell: represents the cell where the pedestrian is standing
@@ -100,6 +102,7 @@ class Pedestrian:
         Pedestrian._id_counter += 1
         self.id: np.int = Pedestrian._id_counter
         self.cell: Cell = cell
+        self.age = age
         self.row: np.float = 0
         self.col: np.float = 0
         self.speed: np.float = speed
@@ -137,6 +140,8 @@ class Pedestrian:
             direction the pedestrian should move and a bool stating is the move is diagonal or not
         """
         cell_delay = self.delay * cell_size
+        if self.steps == 0:
+            self.last_move == current_time
         if constant_speed or \
                 (current_time > self.last_move + cell_delay and self.steps <= max_steps):
             self.last_move = current_time
@@ -175,6 +180,8 @@ class Pedestrian:
         distance = 0
         time = 0
         last_steps = np.asarray(self.last_10_steps)
+        if len(last_steps) <= 2:
+            return 0
         initial_time = last_steps[0, 1]
         final_time = last_steps[-1, 1]
         first_cell = last_steps[0, 0]
@@ -189,7 +196,6 @@ class Pedestrian:
                 # straight step
                 distance += 1.0
             first_cell = last_steps[step, 0]
-        # print(initial_time, final_time, time, distance)
         if time > 0:
             return distance * cell_size / (time / 1000)
         else:
@@ -289,27 +295,41 @@ class Grid:
             self.cells[row, col].distance_to_target = np.inf if new_cell_type == CellType.OBSTACLE.value else 0
             self.cells[row, col].dijkstra_cost = 0 if new_cell_type == CellType.TARGET.value else np.inf
 
-    def flood_pedestrians(self, density):
+    def flood_pedestrians(self, density, distributed_speed: bool = False):
         """
         Floods the grid with pedestrians randomly based on a given density.
         :param density: pedestrians / meter. Please note that this is pedestrians per meter and not per cell!
+        :param distributed_speed: Boolean if false all pedestrians have the same constant speed otherwise the speed is
+                drawn from the age speed plot.
         :return:
         """
         if density is None:
             print("Please supply a density.")
         else:
-            # We multiply the scaling factor to get the area in meters
-            grid_area = self.rows * self.cols * self.cell_size**2
-            no_of_pedestrians = int(density*grid_area)
+            grid_area = self.rows * self.cols * self.cell_size ** 2
+            no_of_pedestrians = int(density * grid_area)
             print("Adding", no_of_pedestrians, "to the grid.")
-            seed(np.random.randint(0,10))
-            for ped in range(no_of_pedestrians):
-                rand_row = np.random.randint(0, self.rows)
-                rand_col = np.random.randint(0, self.cols)
-                while self.cells[rand_row, rand_col].cell_type.value != CellType.EMPTY.value:
+            seed(np.random.randint(0, 10))
+            if distributed_speed:
+                for ped in range(no_of_pedestrians):
+                    # Draw the age of the pedestrian from a uniform distribution and calculate the corresponding speed
+                    # from the age vs speed interpolation which is implemented in age_speed_distribution method,
+                    ped_age = np.random.randint(18, 80)
                     rand_row = np.random.randint(0, self.rows)
                     rand_col = np.random.randint(0, self.cols)
-                self.add_pedestrian(rand_row, rand_col, speed=1.0)
+                    while self.cells[rand_row, rand_col].cell_type.value != CellType.EMPTY.value:
+                        rand_row = np.random.randint(0, self.rows)
+                        rand_col = np.random.randint(0, self.cols)
+                    self.add_pedestrian(rand_row, rand_col, speed=self.__age_speed_distribution(ped_age), age=ped_age)
+            else:
+                # We multiply the scaling factor to get the area in meters
+                for ped in range(no_of_pedestrians):
+                    rand_row = np.random.randint(0, self.rows)
+                    rand_col = np.random.randint(0, self.cols)
+                    while self.cells[rand_row, rand_col].cell_type.value != CellType.EMPTY.value:
+                        rand_row = np.random.randint(0, self.rows)
+                        rand_col = np.random.randint(0, self.cols)
+                    self.add_pedestrian(rand_row, rand_col, speed=1.33)
 
     def check_if_neighbour_is_target(self, cell: Cell) -> bool:
         """
@@ -325,6 +345,22 @@ class Grid:
                 return True
         return False
 
+    def __age_speed_distribution(self, age: np.int):
+        """
+        Using cubic spline, we formed an interpolator function that takes the age as the input and returns the pedestrian
+        speed.
+        :param age: Age of the pedestrian
+        :return: Speed of the pedestrian
+        """
+        if age is None:
+            print("Error")
+        else:
+            input_x = np.arange(5, 85, 5)
+            y = [0.75, 1.23, 1.48, 1.65, 1.60, 1.55, 1.51, 1.49, 1.45, 1.42, 1.34, 1.25, 1.17, 1.05, 0.93, 0.67]
+            output_y = np.array(y)
+            coeff = spi.splrep(input_x, output_y, k=3)
+            speed = spi.splev(age, coeff)
+            return speed
     #######################################################################################################
     # Flood cost values functions
     #######################################################################################################
@@ -523,7 +559,6 @@ class Grid:
     #######################################################################################################
     # Visiulization functions
     #######################################################################################################
-
     def document_measures(self, measuring_point, current_time, ped, cell_size: np.float = 0.4):
         """
 
@@ -538,15 +573,15 @@ class Grid:
         if Path("./logs/measuring_points_logs.csv").exists():
             # Append to file
             measuring_points_logs = open("./logs/measuring_points_logs.csv", "a", newline="")
-            measuring_points_row = [ped.id, measuring_point.row, measuring_point.col, current_time, density, speed]
+            measuring_points_row = [ped.id, ped.age, measuring_point.row, measuring_point.col, current_time, density, speed]
             writer = csv.writer(measuring_points_logs)
             writer.writerow(measuring_points_row)
         else:
             measuring_points_logs = open("./logs/measuring_points_logs.csv", "a", newline="")
-            headers = ["Pedestrian_id", "measuring_row", "measuring_col", "time", "density", "speed"]
+            headers = ["Pedestrian_id", "Pedestrian_Age", "measuring_row", "measuring_col", "time", "density", "speed"]
             writer = csv.writer(measuring_points_logs)
             writer.writerow(headers)
-            measuring_points_row = [ped.id, measuring_point.row, measuring_point.col, current_time, density, speed]
+            measuring_points_row = [ped.id, ped.age, measuring_point.row, measuring_point.col, current_time, density, speed]
             writer.writerow(measuring_points_row)
         measuring_points_logs.close()
 
@@ -588,7 +623,7 @@ class Grid:
 
         return pedestrians_count / measuring_area
 
-    def add_pedestrian(self, row: np.int, col: np.int, speed: np.float = 1.33) -> None:
+    def add_pedestrian(self, row: np.int, col: np.int, speed: np.float = 1.33, age: np.int = 20) -> None:
         """
         Creates a new pedestrian on this grid
         :param row: The row of the cell where the pedestrian is initially standing
@@ -596,7 +631,7 @@ class Grid:
         :param speed: (Optional) The average speed of the pedestrian in meter/second
         :return: None
         """
-        self.pedestrians.append(Pedestrian(self.cells[row, col], speed=speed))
+        self.pedestrians.append(Pedestrian(self.cells[row, col], speed=speed, age=age))
         self.cells[row, col].cell_type = CellType.PEDESTRIAN
 
     def add_measuring_point(self, row: np.int, col: np.int) -> None:

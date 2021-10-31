@@ -36,4 +36,4 @@ def visualize_state(scenario):
     patches = [mpatches.Patch(color=cmap.colors[i], label=labels[i]) for i in range(4)]
     plt.legend(handles=patches, bbox_to_anchor=(1.1, 1.), prop={"size": 6})
     plt.tight_layout()
-    fig.savefig('task_1.pdf')
+    fig.savefig('./figures/visuals.pdf')
