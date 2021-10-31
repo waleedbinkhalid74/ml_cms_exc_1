@@ -1,4 +1,3 @@
-from datetime import datetime
 from enum import Enum
 import numpy as np
 import matplotlib.animation as animation
@@ -11,6 +10,9 @@ import scipy.interpolate as spi
 
 
 class CellType(Enum):
+    """
+    Enum Class used to assign cells the 4 types that they can be of.
+    """
     EMPTY = 0
     PEDESTRIAN = 1
     OBSTACLE = 2
@@ -19,7 +21,8 @@ class CellType(Enum):
 
 class Cell:
     """
-    Cell class represents one cell in the grid. A cell can be a target, an obstacle or empty
+    Cell class represents one cell in the grid. A cell can be a target, an obstacle, a pedestrian
+    (if occupied by a pedestrian) or empty.
     """
 
     def __init__(self, row: int, col: int, cell_type: CellType = CellType.EMPTY, obstacle_avoidance: bool = True):
@@ -34,14 +37,21 @@ class Cell:
         self.row: np.int = row
         self.col: np.int = col
         self.cell_type: CellType = cell_type
+
+        # If obstacle avoidance is True then the obstacle cells have a very high (inf) cost
+        # (given in distance_to_target) otherwise they have the same cost.
         if obstacle_avoidance:
             self.distance_to_target: np.float = np.inf if self.cell_type.value == CellType.OBSTACLE.value else 0
         else:
             self.distance_to_target = 0
+
+        # Neighbours are divided into straight and diagonal to take care of distances.
         self.straight_neighbours = []
         self.diagonal_neighbours = []
         self.dijkstra_cost = 0 if self.cell_type.value == CellType.TARGET.value else np.inf
-        self.path: bool = False  # did a pedestrian pass through this cell, for visualization only
+
+        # This attribute is used to plot the trajectory of pedestrians.
+        self.path: bool = False
 
     def get_distance(self, other_cell, obstacle_avoidance: bool = True) -> np.float:
         """
@@ -58,8 +68,9 @@ class Cell:
 
     def cost_to_pedestrian(self, ped, r_max: np.float = 1.5) -> np.float:
         """
-        get cost added by a pedestrian to this cell
-        :param ped: A pedestrian to whom to calculate the distance cost
+        get cost added by a pedestrian to a cell based on the repulsion cost function.
+
+        :param ped: A pedestrian with respect to whom to calculate the distance cost
         :param r_max: Maximum distance to start avoiding other pedestrians
         :return: the cost calculated based on the distance to the pedestrian
         """
@@ -71,12 +82,26 @@ class Cell:
             return 1 / np.exp(r * r - r_max * r_max)
 
     def __str__(self):
+        """
+        Prints the cell coordinates and the cell type is the print() command is invoked on a Cell type object.
+        :return:
+        """
         return f"Cell ({self.row}, {self.col}) Type = {self.cell_type}"
 
     def __eq__(self, other_cell):
+        """
+        Compares if two cells are the same.
+        :param other_cell: Cell Type object
+        :return: True if cells are the same else false
+        """
         return self.row == other_cell.row and self.col == other_cell.col
 
     def __ge__(self, other_cell):
+        """
+        Compares if a certain cell is closer to the target compared to another
+        :param other_cell: Cell Type object
+        :return: True if invoking cells is closer to target than the other cell
+        """
         return self.distance_to_target >= \
                other_cell.distance_to_target
 
@@ -93,6 +118,8 @@ class Pedestrian:
         Initiate the pedestrian with the given position & a unique id.
         :param cell: represents the cell where the pedestrian is standing
         :param speed: represents the speed this pedestrian moves in meter/second
+        :param age: represents the age of the pedestrian. This can be used to assign the pedestrian a speed based on the
+                    age speed diagram in RiMEA figure 2
         row & col in a pedestrian serve to store partial step
             this helps creating more accurate diagonal speed
         delay is the inverse of the speed
@@ -100,16 +127,17 @@ class Pedestrian:
         """
         super().__init__()
         Pedestrian._id_counter += 1
-        self.id: np.int = Pedestrian._id_counter
-        self.cell: Cell = cell
-        self.age = age
+        self.id: np.int = Pedestrian._id_counter # ID Unique to each pedestrian
+        self.cell: Cell = cell # The cell a pedestrian occupies
+        self.age = age # age of the pedestrian
         self.row: np.float = 0
         self.col: np.float = 0
         self.speed: np.float = speed
         self.delay: np.int = 1000.0 // speed
         self.steps: np.float = 0
-        self.last_move = 0
-        self.last_10_steps = []
+        self.last_move = 0 # Time when the last step was made
+        self.last_10_steps = [] # Stores the last 10 cells visited along with the time at which they were visited
+                                # to calculate pedestrian speed
 
     def is_valid(self) -> bool:
         """
@@ -119,6 +147,14 @@ class Pedestrian:
         return self.cell.cell_type.value == CellType.PEDESTRIAN.value
 
     def update_cell(self, new_cell: Cell, current_time: np.int = 0):
+        """
+        Set the current cell to empty and assign the pedestrian's cell the new cell.
+        Add the new cell to the pedestrian path and save the update in last_10_steps
+        for future measurements.
+        :param new_cell:
+        :param current_time:
+        :return: None
+        """
         self.cell.cell_type = CellType.EMPTY
         self.cell.path = True
         if len(self.last_10_steps) >= 10:
@@ -130,7 +166,9 @@ class Pedestrian:
              current_time: np.int = 0, max_steps: np.int = 1000, cell_size: np.float = 0.4) \
             -> (np.float, np.float, np.bool):
         """
-        Changes the cell the pedestrian is standing on.
+        Checks if the pedestrian is maintaining their speed. If so then checks if a diagonal step is made or a straight step.
+        A straight step is straight forward but if it is a diagonal step then movements potentials are accumulated
+        and if they are more than 1 then the diagonal move can be made.
         :param constant_speed: A flag indicating whether the speed is constant or individual to pedestrians
         :param cell_size: cell dimension in meter
         :param max_steps: Maximum number of allow steps
@@ -140,8 +178,8 @@ class Pedestrian:
             direction the pedestrian should move and a bool stating is the move is diagonal or not
         """
         cell_delay = self.delay * cell_size
-        if self.steps == 0:
-            self.last_move == current_time
+        # if self.steps == 0:
+        #     self.last_move == current_time
         if constant_speed or \
                 (current_time > self.last_move + cell_delay and self.steps <= max_steps):
             self.last_move = current_time
@@ -165,12 +203,12 @@ class Pedestrian:
                 # straight step, also return false to indicate that a diagonal step was not made
                 return (cell.row - self.cell.row), (cell.col - self.cell.col), False
         else:
-            return 0, 0
+            return 0, 0, False
 
     def measure_speed(self, cell_size: np.float = 0.4):
         """
         Pedestrian class function that measures the speed of the pedestrain considering its last_steps steps
-        :param cell_size: The scale of cell in meters
+        :param cell_size: The size of cell in meters
         :return: The average speed over the last_steps in meter/second
         """
         # measure the covered distance by last_steps
@@ -221,6 +259,8 @@ class Grid:
         Set up basic attributes for the GUI object
         :param rows: row size of grid
         :param cols: column size of grid
+        :param cells: np array of objects of type Cell that constitute the entire grid
+        :param cell_size: Size of each cell in meters.
         """
         super().__init__()
 
@@ -238,18 +278,29 @@ class Grid:
         # Standard colormap to homogenize all visualizations
         self.cmap = colors.ListedColormap(['blue', 'red', 'yellow', 'green'])
         self.animation = None
+        # Construct an empty grid if the cells are not provided.
         if cells is None:
             self.cells = np.asarray([[Cell(row, column) for column in range(cols)] for row in range(rows)])
         else:
             self.cells = cells
+
+        # Fill the cells with their attributes straight_neighbours and diagonal_neighbours based on the grid state.
         self.assign_neighbours()
 
         self.pedestrians = [Pedestrian(cell) for row in self.cells
                             for cell in row if cell.cell_type.value == 1]
         self.initial_state = self.cells.copy()
+
+        # Store the points where measurements for pedestrian speed and density should be taken.
+        # This can be filled by calling Grid.add_measuring_point
         self.measuring_points = []
 
     def set_cell_size(self, cell_size: np.float = 1.0):
+        """
+        Setter to set the attribute of cell size in meters
+        :param cell_size: size of a single cell in meters
+        :return:
+        """
         self.cell_size = cell_size
 
     def assign_neighbours(self):
@@ -259,7 +310,6 @@ class Grid:
         which include horizontal and vertical neighbors. Another includes diagonal neighbors.
         This is done in order to cater to speed of pedestrians.
 
-        :param: grid -> Grid class
         """
         for row in range(self.rows):
             for col in range(self.cols):
@@ -277,7 +327,9 @@ class Grid:
     def change_cell_type(self, row: int, col: int) -> None:
         """
         Updates the type of the cell in the give indices and
-        update the pedestrians list if necessary
+        update the pedestrians list if necessary.
+
+        This is used by the GUI when the user is selecting the cells and creating a custom scenario.
         :param row: row index
         :param col: column index
         :return: None
@@ -298,6 +350,8 @@ class Grid:
     def flood_pedestrians(self, density, distributed_speed: bool = False):
         """
         Floods the grid with pedestrians randomly based on a given density.
+        Normally they will all have the same speed but otherwise they will have a speed extracted from the age vs speed
+        graph defined in RiMEA figure 2
         :param density: pedestrians / meter. Please note that this is pedestrians per meter and not per cell!
         :param distributed_speed: Boolean if false all pedestrians have the same constant speed otherwise the speed is
                 drawn from the age speed plot.
@@ -345,7 +399,7 @@ class Grid:
                 return True
         return False
 
-    def __age_speed_distribution(self, age: np.int):
+    def __age_speed_distribution(self, age: np.int) -> np.float:
         """
         Using cubic spline, we formed an interpolator function that takes the age as the input and returns the pedestrian
         speed.
@@ -391,10 +445,6 @@ class Grid:
         wish the distance at the target to be zero) and the pedestrian as the destination.
         :return: None
         """
-        targets = [cell for row in self.cells
-                   for cell in row if cell.cell_type.value == 3]
-
-        # for target in targets:
         unvisited_cells = [cell for cell in self.cells.flatten() if
                            cell.cell_type.value is not CellType.OBSTACLE.value]
         # Once this list is empty the algorithm is complete
@@ -419,10 +469,10 @@ class Grid:
     #######################################################################################################
     def __pedestrians_costs(self, p1: Pedestrian, neighbor: Cell) -> np.float:
         """
-        calculate the sum of all other pedestrians on the neighbor cell
-        :param p1:
-        :param neighbor:
-        :return:
+        calculate the sum of costs due to all other pedestrians on the specific  cell
+        :param p1: the pedestrian for which the neighbouring cell pedestrian cost is being calculated
+        :param neighbor: the neighbouring cell in question
+        :return: cost of the neighbouring cell due to pedestrians. Note the intrinsic cost is separate
         """
         costs = 0
         for p2 in self.pedestrians:
@@ -431,6 +481,14 @@ class Grid:
         return costs
 
     def __get_cell_cost(self, dijkstra, ped, cell):
+        """
+        get the total cost associated to the cell
+        :param dijkstra: If true calculates the cost from the dijkstra's algorithm otherwise the normal distance
+        to target is considered.
+        :param ped: the pedestrian which has to move
+        :param cell: the cell in question
+        :return: total cost of the cell.
+        """
         pc = self.__pedestrians_costs(ped, cell)
         if dijkstra:
             return cell.dijkstra_cost + pc
@@ -438,6 +496,13 @@ class Grid:
             return cell.distance_to_target + pc
 
     def __choose_best_neighbor(self, dijkstra: bool, ped: Pedestrian):
+        """
+        Based on the minimum cost selects the best candidate cell for the next move.
+        :param dijkstra: If true calculates the cost from the dijkstra's algorithm otherwise the normal distance
+        to target is considered.
+        :param ped: the pedestrian which has to move
+        :return: the cell which is the best choice for the next move.
+        """
         selected_cell = ped.cell
         min_distance = self.__get_cell_cost(dijkstra, ped, selected_cell)
         for nc in ped.cell.straight_neighbours:
@@ -475,9 +540,14 @@ class Grid:
         absorbing_targets: decides if the pedestrians disappear once they reach the target
         :param periodic_boundary: flag to identify if the right boundary is periodic. Currently only works with
                                     RiMEA 4 case
+        :param current_time: The current clock time
+        :param max_steps: the maximum number of updates that need to be made.
+        :param dijkstra: Boolean flag indicates if the cost to be calculated is driven from the dijkstra's algorithm or not
+        :param absorbing_targets: Flag deciding if the pedestrians should disappear once they reach a target.
+        :param constant_speed: defines if the pedestrians maintain a constant speed.
+        :param periodic_boundary: Flag that defines if the pedestrians move in a carousel.
         :return: None
         """
-        # current_time = datetime.now()
         cell_size = self.cell_size
         self.time_step += 1
         # save the current state of the grid
@@ -486,6 +556,7 @@ class Grid:
         # pedestrians who reached the target
         to_remove_peds = []
         for ped in self.pedestrians:
+            # teleport pedestrian to start if the periodic boundary condition is set to true.
             if periodic_boundary:
                 if self.check_if_neighbour_is_target(ped.cell):
                     next_row = ped.cell.row
@@ -505,6 +576,7 @@ class Grid:
             ped_row, ped_col, diag_bool = ped.move(selected_cell, constant_speed=constant_speed,
                                                    current_time=current_time, max_steps=max_steps, cell_size=cell_size)
 
+            # check if a complete diagonal step is possible.
             if np.abs(ped_row) >= 1.0 and np.abs(ped_col) >= 1.0:
                 # Check if the pedestrian should move a diagonally
                 ped.update_cell(selected_cell, current_time=current_time)
@@ -537,9 +609,10 @@ class Grid:
         This method executes the simulation based on the type of cost function (rudimentary or dijkstra assigned)
         and stores all the states of the grid in an attribute
 
-        :param obstacle_avoidance:
-        :param step_time:
-        :param absorbing_targets:
+        :param obstacle_avoidance: boolean flag that determines if the pedestrians should avoid obstacles.
+                                This is just for demonstration purposes
+        :param step_time: how long of a delay exists between steps.
+        :param absorbing_targets: boolean flag that decides if the pedestrians disappear when they reach a target.
         :param no_of_steps: How many steps to simulate
         :param dijkstra: whether the cost should be based on the dijkstra's algorithm
         :return: List of past states of the scenario
@@ -561,7 +634,7 @@ class Grid:
     #######################################################################################################
     def document_measures(self, measuring_point, current_time, ped, cell_size: np.float = 0.4):
         """
-
+        Stores various parameters for the pedestrians who step into the measurement cells in a csv file in the logs folder.
         :param measuring_point: The current measuring point cell
         :param current_time: Time since the start of the simulation in milliseconds
         :param ped: the pedestrian passing through the measuring point
@@ -577,6 +650,7 @@ class Grid:
             writer = csv.writer(measuring_points_logs)
             writer.writerow(measuring_points_row)
         else:
+            # If file doesnt exist then create it.
             measuring_points_logs = open("./logs/measuring_points_logs.csv", "a", newline="")
             headers = ["Pedestrian_id", "Pedestrian_Age", "measuring_row", "measuring_col", "time", "density", "speed"]
             writer = csv.writer(measuring_points_logs)
@@ -587,7 +661,7 @@ class Grid:
 
     def measure_density(self, measuring_point, cell_size: np.float = 0.4):
         """
-        Grid class function
+        Grid class function that records the density of pedestrians in a certain region.
         :param measuring_point: The current measuring point cell
         :param cell_size: The scale of cell in meters
         :return:
@@ -625,10 +699,11 @@ class Grid:
 
     def add_pedestrian(self, row: np.int, col: np.int, speed: np.float = 1.33, age: np.int = 20) -> None:
         """
-        Creates a new pedestrian on this grid
+        Creates a new pedestrian on this grid and set the cell type where the pedestrian exists to pedestrian type.
         :param row: The row of the cell where the pedestrian is initially standing
         :param col: The column of the cell where the pedestrian is initially standing
         :param speed: (Optional) The average speed of the pedestrian in meter/second
+        :param age: The age of the pedestrian
         :return: None
         """
         self.pedestrians.append(Pedestrian(self.cells[row, col], speed=speed, age=age))
@@ -636,7 +711,7 @@ class Grid:
 
     def add_measuring_point(self, row: np.int, col: np.int) -> None:
         """
-        Creates a new pedestrian on this grid
+        Creates a measuring point on this grid. The density and speeds are recorded at these points and stored in a log file.
         :param row: The row of the cell where the pedestrian is initially standing
         :param col: The column of the cell where the pedestrian is initially standing
         :return: None
