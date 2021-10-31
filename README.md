@@ -34,15 +34,15 @@ Firstly, you need to input y to load a given scenario
 
 Seconly, you need to select a scenario number from the given list
 
-![Image text](https://raw.githubusercontent.com/waleedbinkhalid74/ml_cms_exc_1/develop/figures/y_question2.jpg?token=AWEFHK4VD2BBQMX6LL3AIZTBPZE5U)
+![Image text](https://github.com/waleedbinkhalid74/ml_cms_exc_1/blob/develop/figures/y_question2.jpg)
 
 Next, please choose to use Dijkstra algorithm or not
 
-![Image text](https://raw.githubusercontent.com/waleedbinkhalid74/ml_cms_exc_1/develop/figures/y_quetion3.jpg?token=AWEFHK6RV5OYZ2VPZU7PDD3BPZE6Y)
+![Image text](https://github.com/waleedbinkhalid74/ml_cms_exc_1/blob/develop/figures/y_quetion3.jpg)
 
 Finally, determine a mamximum steps for simulation
 
-![Image text](https://raw.githubusercontent.com/waleedbinkhalid74/ml_cms_exc_1/develop/figures/y_question4.jpg?token=AWEFHKYS6S3VG3Y4J3P6UA3BPZFAC)
+![Image text](https://github.com/waleedbinkhalid74/ml_cms_exc_1/blob/develop/figures/y_question4.jpg)
 
 After that, you can see a loaded scenario on you screen. Please choose start button to begin your simulation. Also you can choose pause button while simulating to check each step
 
@@ -50,7 +50,27 @@ After that, you can see a loaded scenario on you screen. Please choose start but
 
 If you would like to set up your own scenario, you need to input n for the first question.
 
-![Image text](https://raw.githubusercontent.com/waleedbinkhalid74/ml_cms_exc_1/develop/figures/y_question1.jpg?token=AWEFHK765UPI5WQACXJ444DBPZF3U)
+![Image text](https://github.com/waleedbinkhalid74/ml_cms_exc_1/blob/develop/figures/y_question1.jpg)
+
+Next, please set up the size of cells like 1, 0.5, 2 representing the length of a cell
+
+![Image text](https://github.com/waleedbinkhalid74/ml_cms_exc_1/blob/develop/figures/y_question5.jpg)
+
+Thirdly, choose the size of grids like 10,10
+
+![Image text](https://github.com/waleedbinkhalid74/ml_cms_exc_1/blob/develop/figures/y_question6.jpg)
+
+Next, determine to use Dijkstra algorithm or not
+
+![Image text](https://github.com/waleedbinkhalid74/ml_cms_exc_1/blob/develop/figures/y_quetion3.jpg)
+
+Finally, set up a maximum steps for simulation
+
+![Image text](https://github.com/waleedbinkhalid74/ml_cms_exc_1/blob/develop/figures/y_question4.jpg)
+
+After that, you can get a GUI interface. You can choose to set up locations and numbers of pedestrians, targets, obstacles at will by left clicking the cell.
+
+![Image text](https://github.com/waleedbinkhalid74/ml_cms_exc_1/blob/develop/figures/your_own_scenario.jpg)
 
 
 ![Image text](https://raw.githubusercontent.com/waleedbinkhalid74/ml_cms_exc_1/develop/figures/GUI_interface.jpg?token=AWEFHKZX76WTRXSBPKVQDPLBPZDLQ)
