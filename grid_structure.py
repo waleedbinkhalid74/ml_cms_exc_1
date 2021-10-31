@@ -441,9 +441,9 @@ class Grid:
         selected_cell = ped.cell
         min_distance = self.__get_cell_cost(dijkstra, ped, selected_cell)
         for nc in ped.cell.straight_neighbours:
-            if nc.cell_type.value == 1 or nc.cell_type.value == 2:
-                continue
-            elif nc.cell_type.value == 3:
+            # if nc.cell_type.value == 1 or nc.cell_type.value == 2:
+            #     continue
+            if nc.cell_type.value == 3:
                 return nc
             else:
                 cell_cost = self.__get_cell_cost(dijkstra, ped, nc)
@@ -451,9 +451,9 @@ class Grid:
                     selected_cell = nc
                     min_distance = cell_cost
         for nc in ped.cell.diagonal_neighbours:
-            if nc.cell_type.value == 1 or nc.cell_type.value == 2:
-                continue
-            elif nc.cell_type.value == 3:
+            # if nc.cell_type.value == 1 or nc.cell_type.value == 2:
+            #     continue
+            if nc.cell_type.value == 3:
                 return nc
             else:
                 cell_cost = self.__get_cell_cost(dijkstra, ped, nc)
