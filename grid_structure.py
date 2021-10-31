@@ -119,7 +119,7 @@ class Pedestrian:
         self.cell.cell_type = CellType.EMPTY
         self.cell.path = True
         if len(self.last_10_steps) >= 10:
-            self.last_10_steps.pop()
+            self.last_10_steps.pop(0)
         self.last_10_steps.append([self.cell, current_time])
         self.cell = new_cell
 
@@ -176,9 +176,11 @@ class Pedestrian:
         time = 0
         last_steps = np.asarray(self.last_10_steps)
         initial_time = last_steps[0, 1]
+        final_time = last_steps[-1, 1]
         first_cell = last_steps[0, 0]
+        time = final_time - initial_time
         for step in range(1, len(last_steps)):
-            time = last_steps[step, 1] - initial_time
+            # time = last_steps[step, 1] - initial_time
             # time = time.total_seconds()
             if last_steps[step, 0].row != first_cell.row and last_steps[step, 0].col != first_cell.col:
                 # diagonal step
@@ -187,6 +189,7 @@ class Pedestrian:
                 # straight step
                 distance += 1.0
             first_cell = last_steps[step, 0]
+        print(initial_time, final_time, time, distance)
         if time > 0:
             return distance * cell_size / (time / 1000)
         else:
@@ -295,10 +298,11 @@ class Grid:
         if density is None:
             print("Please supply a density.")
         else:
+            # We multiply the scaling factor to get the area in meters
             grid_area = self.rows * self.cols * self.cell_size**2
             no_of_pedestrians = int(density*grid_area)
             print("Adding", no_of_pedestrians, "to the grid.")
-            seed(1)
+            seed(np.random.randint(0,10))
             for ped in range(no_of_pedestrians):
                 rand_row = np.random.randint(0, self.rows)
                 rand_col = np.random.randint(0, self.cols)
@@ -454,6 +458,8 @@ class Grid:
                     # This only works for RiMEA 4 currently
                     if self.cells[next_row, next_col].cell_type.value == CellType.EMPTY.value:
                         ped.update_cell(self.cells[next_row, next_col], current_time=current_time)
+                        self.document_measures(self.cells[next_row, next_col], current_time, ped, cell_size=cell_size)
+                        continue
                     # If the first cell is not free then make the pedestrian wait.
                     else:
                         continue
