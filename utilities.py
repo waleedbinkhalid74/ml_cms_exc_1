@@ -1,11 +1,10 @@
-import csv
+import os
 from os import listdir
 from os.path import isfile, join
-
-from grid_structure import *
-from game_gui import start_game_gui
 from shutil import copyfile
-import os
+
+from game_gui import start_game_gui
+from grid_structure import *
 
 
 def parser_array2obj(array, obstacle_avoidance: bool = True) -> Grid:
@@ -43,7 +42,7 @@ def scenario_loader():
     Otherwise the control is handed over to the scenario builder function that helps the user in constructing a new
     scenario.
 
-    :return: Grid object
+    :return: Grid object, cell size meters in float
     """
     # Get the names of the available scenario files and list them nicely
     scenario_files = [f for f in listdir('scenarios') if isfile(join('scenarios', f))]
@@ -79,14 +78,7 @@ def scenario_builder():
      1. Define size of grid with rows and cols
      2. Manually add P, O or T at the given cells
 
-    :return: custom_scenario: numpy array grid with following encoding
-    Array encoding rule
-        0: Empty Cell
-        1. Pedestrian Cell
-        2. Obstacle Cell
-        3. Target Cell
-    All array entries will be ints or floats
-
+    :return: Grid object, cell size meters in float
     """
     # Get size of grid from user
     cell_size_meters = float(input("Please select the size of each cell in meters: "))
@@ -94,6 +86,7 @@ def scenario_builder():
 
     rows, cols = tuple([eval(x) for x in input("Enter the size of the grid in the format: rows, columns: ").split(',')])
     return Grid(rows, cols), cell_size_meters
+
 
 def execute_rimea_4():
     with open('./scenarios/rimea_test4.csv', newline='') as csvfile:

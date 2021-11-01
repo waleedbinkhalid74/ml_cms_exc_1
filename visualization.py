@@ -1,7 +1,7 @@
-import matplotlib.pyplot as plt
-from matplotlib import colors, animation
 import matplotlib.patches as mpatches
+import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib import colors
 
 
 def visualize_state(scenario):

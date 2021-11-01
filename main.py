@@ -1,12 +1,16 @@
-from utilities import scenario_loader, scenario_builder
-import pygame
 import game_gui
+from utilities import scenario_loader, scenario_builder
 
 YELLOW = '\033[93m'
 ENDC = '\033[0m'
 
 
 def crowd_simulator():
+    """
+    Prompt the user to choose scenario builder or loader,
+    then starts the game gui
+    :return: None
+    """
     print(f"{YELLOW} Leave answers empty for default {ENDC}")
     load_scenario_bool = input("Do you want to load a scenario? (y/n)")
     # Case if the user wishes to load a scenario saved in the scenario directory.
@@ -35,8 +39,9 @@ def crowd_simulator():
         max_steps = 100
     #     assert False, "Incorrect input. Answer must be a positive integer. Please try again."
     scenario.set_cell_size(cell_size_meters)
-    step_time = int(cell_size_meters * 750) # If the cell is of 1 meter then the average speed of 1.33 m/s
-    game_gui.start_game_gui(scenario, max_steps=max_steps, dijkstra=dijkstra, step_time=step_time, cell_size=cell_size_meters)
+    step_time = int(cell_size_meters * 750)  # If the cell is of 1 meter then the average speed of 1.33 m/s
+    game_gui.start_game_gui(scenario, max_steps=max_steps, dijkstra=dijkstra, step_time=step_time,
+                            cell_size=cell_size_meters)
 
 
 def main():

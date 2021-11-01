@@ -3,8 +3,8 @@ import pygame
 from grid_structure import *
 
 
-def create_button(screen, horz_pos: int, vert_pos: int, width: int, height: int, text: str, button_color: tuple,
-                  text_color: tuple):
+def create_button(screen, horz_pos: np.int32, vert_pos: np.int32, width: np.int32, height: np.int32, text: str,
+                  button_color: tuple, text_color: tuple):
     """
     This function creates a pygame rectangle with text on top.
     The rectangle can be used a button
@@ -17,7 +17,7 @@ def create_button(screen, horz_pos: int, vert_pos: int, width: int, height: int,
     :param text: the text to display on the button
     :param button_color: the color of the button as an RPG tuple
     :param text_color: the color of text as an RPG tuple
-    :return:
+    :return: PyGame Rect Object
     """
     button = pygame.Rect(horz_pos, vert_pos, width, height)
     text_surface_object = pygame.font.SysFont('Arial', height // 2).render(
@@ -28,26 +28,28 @@ def create_button(screen, horz_pos: int, vert_pos: int, width: int, height: int,
     return button
 
 
-def start_game_gui(grid: Grid, max_steps: int = 200, step_time: int = 300, dijkstra=False,
-                   cell_size: np.float = 0.4, constant_speed: np.bool = True,
-                   absorbing_targets=True, periodic_boundary: bool=False):
+def start_game_gui(grid: Grid, max_steps: np.int32 = 200, step_time: np.int32 = 300, cell_size: np.float = 0.4,
+                   dijkstra: bool = False, constant_speed: bool = True,
+                   absorbing_targets: bool = True, periodic_boundary: bool = False):
     """
     This function sets up and starts a pygame gui window to simulate a grid object
     :param cell_size: cell dimension in meter
     :param grid: Grid object to simulate
     :param max_steps: Maximum number of simulation steps
-    :param dijkstra: Use the Dijkstra algorithm
     :param step_time: Duration of one step in milli-seconds
+    :param dijkstra: A flag to use the Dijkstra algorithm
+    :param absorbing_targets: A flag the pedestrians disappear once they reach the target
+    :param periodic_boundary: A flag to make the grid an infinite loop
+    :param constant_speed: A flag to make all pedestrians have the same speed
     :return: None
     """
-    # Get monitor parameters
-    # user32 = ctypes.windll.user32
-    # monitor_width, monitor_height = user32.GetSystemMetrics(0), user32.GetSystemMetrics(1)
     # Start pygame
     pygame.init()
 
-    infoObject = pygame.display.Info()
-    monitor_width, monitor_height = infoObject.current_w, infoObject.current_h
+    # Get monitor parameters
+    info_object = pygame.display.Info()
+    monitor_width, monitor_height = info_object.current_w, info_object.current_h
+
     # Define essential colors
     blue = (0, 0, 100)
     white = (200, 200, 200)
@@ -134,9 +136,10 @@ def start_game_gui(grid: Grid, max_steps: int = 200, step_time: int = 300, dijks
         if grid.pedestrians and simulation_running and not simulation_done \
                 and steps < max_steps and \
                 (not constant_speed or pygame.time.get_ticks() >= step_waiting_time):
-            grid.update_grid(current_time=(pygame.time.get_ticks() - simulation_start_time) - simulation_stoppage_time, max_steps=100, dijkstra=dijkstra,
+            grid.update_grid(current_time=(pygame.time.get_ticks() - simulation_start_time) - simulation_stoppage_time,
+                             max_steps=max_steps, dijkstra=dijkstra,
                              absorbing_targets=absorbing_targets, constant_speed=constant_speed,
-                             cell_size=cell_size, periodic_boundary=periodic_boundary)
+                             periodic_boundary=periodic_boundary)
             step_waiting_time = pygame.time.get_ticks() + step_time
 
         if grid.pedestrians:
@@ -146,9 +149,11 @@ def start_game_gui(grid: Grid, max_steps: int = 200, step_time: int = 300, dijks
         if (not grid.pedestrians or steps >= max_steps) and simulation_running:
             simulation_total_time = (pygame.time.get_ticks() - simulation_start_time) - simulation_stoppage_time
             create_button(screen,
-                          window_width // 8, window_height + 10,
-                          6 * window_width // 8, block_size * 3 // 2,
-                          f"Time = {simulation_total_time / 1000} seconds     steps = {steps}", green, blue)
+                          window_width // 10, window_height + 10,
+                          8 * window_width // 10, block_size * 3 // 2,
+                          f"Time = {simulation_total_time / 1000} seconds  -  "
+                          f"steps = {steps}  -  "
+                          f"Pedestrians Gone = {pedestrians - len(grid.pedestrians)}", green, blue)
             simulation_running = False
             simulation_done = True
 
@@ -171,6 +176,7 @@ def start_game_gui(grid: Grid, max_steps: int = 200, step_time: int = 300, dijks
                 if not simulation_done and start_button.collidepoint(mouse_pos):
                     simulation_running = True
                     if not simulation_start:
+                        pedestrians = len(grid.pedestrians)
                         if dijkstra:
                             grid.flood_dijkstra()
                         else:
