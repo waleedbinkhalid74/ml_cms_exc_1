@@ -61,3 +61,55 @@
    1. QAIS: Take care of speed additions
    2. New attribute of running speed of pedestrian
    3. YIMING: Fill curve on figure 2 and get coeff. and construct an equation.
+   
+   
+-------------------------------------------------------------------
+On Documentation
+1. Waleed: requirements.txt check.
+2. Waleed: read Yimings work
+3. Qais: read Waleeds work
+4. Yiming: read Qais work
+5. Qais: In 1.2.1 Existing scenarios add description of parser that converts numpy array to objs
+6. Yiming: in UML diagram move check_if_neighbour_is_target to cell
+7. Yiming: In algo pedestrian move add how pedestrian.row and col are treated.
+8. Waleed: Add reference to the rimea guidelines and to the dijkstra's algo.
+9. Qais: Debug measure_density
+10. Waleed: Replot fndamental diagram
+11. Yiming: replace rimea 7 scenario with gui pic
+12. Yiming: add legend to rimea 7
+13. Waleed: Add markdown explaination in notebook
+14. Qais: Debug failure on RiMEA 4 and 7
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   
