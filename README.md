@@ -19,7 +19,7 @@ In order to execute the Crowd Simulation
 ```python3 main.py```
 
 In order to see step by step explaination refer to
-```cellular_automata_exc_1.ipynb``
+```cellular_automata_exc_1.ipynb```
 
 ##Introduction to GUI
 
