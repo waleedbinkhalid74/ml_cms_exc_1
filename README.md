@@ -27,26 +27,30 @@ To visualize the simulation of crowds in a good way, we set up a GUI. You can ch
 set up your own scenarios at will.
 
 
+### Load a Scenario
+
 If you choose a given scenario, you need answer the following questions by input from command line.
 Firstly, you need to input y to load a given scenario
 
 ![Image text](https://github.com/waleedbinkhalid74/ml_cms_exc_1/blob/develop/figures/y_question1.jpg)
 
-Seconly, you need to select a scenario number from the given list
+Secondly, you need to select a scenario number from the given list
 
 ![Image text](https://github.com/waleedbinkhalid74/ml_cms_exc_1/blob/develop/figures/y_question2.jpg)
 
-Next, please choose to use Dijkstra algorithm or not
+Next, please choose to use Dijkstra's algorithm or not
 
 ![Image text](https://github.com/waleedbinkhalid74/ml_cms_exc_1/blob/develop/figures/y_quetion3.jpg)
 
-Finally, determine a mamximum steps for simulation
+Finally, determine a maximum steps for simulation
 
 ![Image text](https://github.com/waleedbinkhalid74/ml_cms_exc_1/blob/develop/figures/y_question4.jpg)
 
 After that, you can see a loaded scenario on you screen. Please choose start button to begin your simulation. Also you can choose pause button while simulating to check each step.
 
 ![Image text](https://github.com/waleedbinkhalid74/ml_cms_exc_1/blob/develop/figures/Given_scenariojpg.jpg)
+
+### Make Your Own Scenario
 
 If you would like to set up your own scenario, you need to input n for the first question.
 
