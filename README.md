@@ -21,7 +21,7 @@ In order to execute the Crowd Simulation
 In order to see step by step explaination refer to
 ```cellular_automata_exc_1.ipynb```
 
-##Introduction to GUI
+## Introduction to GUI
 
 To visualize the simulation of crowds in a good way, we set up a GUI. You can choose to load some given scenarios to simulate crowds or 
 set up your own scenarios at will.
