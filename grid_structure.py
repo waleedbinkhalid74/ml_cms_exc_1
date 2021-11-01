@@ -36,8 +36,8 @@ class Cell:
         :param obstacle_avoidance: if false, obstacles are ignored
         """
         super().__init__()
-        self.row: np.intc = np.int_(row)
-        self.col: np.intc = np.int_(col)
+        self.row: np.intc = np.intc(row)
+        self.col: np.intc = np.intc(col)
         self.cell_type: CellType = cell_type
 
         # If obstacle avoidance is True then the obstacle cells have a very high (inf) cost
@@ -125,9 +125,9 @@ class Pedestrian:
     A Pedestrian has a unique cell and a unique id.
     The cell is updated after every step based on a utility function.
     """
-    _id_counter: np.intc = np.int_(0)
+    _id_counter: np.intc = np.intc(0)
 
-    def __init__(self, cell: Cell, speed: np.single = np.single(1.33), age: np.intc = np.int_(20)):
+    def __init__(self, cell: Cell, speed: np.single = np.single(1.33), age: np.intc = np.intc(20)):
         """
         Initiate the pedestrian with the given position & a unique id.
         :param cell: represents the cell where the pedestrian is standing
@@ -144,12 +144,12 @@ class Pedestrian:
         self.id: np.intc = Pedestrian._id_counter  # ID Unique to each pedestrian
         self.cell: Cell = cell  # The cell a pedestrian occupies
         self.age: np.intc = age  # age of the pedestrian
-        self.row: np.single = np.int_(0)
-        self.col: np.single = np.int_(0)
+        self.row: np.single = np.intc(0)
+        self.col: np.single = np.intc(0)
         self.speed: np.single = speed
-        self.delay: np.intc = np.int_(1000.0 // speed)
-        self.steps: np.single = np.int_(0)
-        self.last_move: np.intc = np.int_(0)  # Time when the last step was made
+        self.delay: np.intc = np.intc(1000.0 // speed)
+        self.steps: np.single = np.intc(0)
+        self.last_move: np.intc = np.intc(0)  # Time when the last step was made
         self.last_10_steps = []  # Stores the last 10 cells visited along with the time at which they were visited
         # to calculate pedestrian speed
 
@@ -177,7 +177,7 @@ class Pedestrian:
         self.cell = new_cell
 
     def move(self, cell: Cell, constant_speed: bool = True,
-             current_time: np.intc = np.int_(0), max_steps: np.intc = np.int_(1000),
+             current_time: np.intc = np.intc(0), max_steps: np.intc = np.intc(1000),
              cell_size: np.single = np.single(0.4)) -> (np.single, np.single, bool):
         """
         Checks if the pedestrian is maintaining their speed. If so then checks if a diagonal step is made or a straight step.
@@ -192,7 +192,6 @@ class Pedestrian:
             direction the pedestrian should move and a bool stating is the move is diagonal or not
         """
         cell_delay = self.delay * cell_size
-        
         if constant_speed or \
                 (current_time > self.last_move + cell_delay and self.steps <= max_steps):
             self.last_move = current_time
@@ -361,7 +360,7 @@ class Grid:
             self.cells[row, col].dijkstra_cost = np.single(0) \
                 if new_cell_type == CellType.TARGET.value else np.inf
 
-    def flood_pedestrians(self, density, distributed_speed: bool = False):
+    def flood_pedestrians(self, density: np.single, distributed_speed: bool = False):
         """
         Floods the grid with pedestrians randomly based on a given density.
         Normally they will all have the same speed but otherwise they will have a speed extracted from the age vs speed
@@ -528,9 +527,9 @@ class Grid:
                     min_distance = cell_cost
         return selected_cell
 
-    def update_grid(self, current_time=np.int_(0), max_steps=np.int_(100), dijkstra=False,
-                    absorbing_targets=True, constant_speed=True,
-                    periodic_boundary: bool = False):
+    def update_grid(self, current_time=np.intc(0), max_steps=np.intc(100), 
+                    dijkstra: bool = False, absorbing_targets: bool = True, 
+                    constant_speed: bool = True, periodic_boundary: bool = False):
         """
         this method updates moves the pedestrians who didn't reach the target yet.
         Pedestrians move horizontally & vertically one step per time step
@@ -549,11 +548,10 @@ class Grid:
         :param periodic_boundary: Flag that defines if the pedestrians move in a carousel.
         :return: None
         """
-        cell_size = self.cell_size
-        self.time_step += 1
         # save the current state of the grid
         if constant_speed:
             self.past_states.append(self.to_array())
+            self.time_step += 1
         # pedestrians who reached the target
         to_remove_peds = []
         for ped in self.pedestrians:
@@ -566,7 +564,8 @@ class Grid:
                     # This only works for RiMEA 4 currently
                     if self.cells[next_row, next_col].cell_type.value == CellType.EMPTY.value:
                         ped.update_cell(self.cells[next_row, next_col])
-                        self.document_measures(self.cells[next_row, next_col], current_time, ped, cell_size=cell_size)
+                        self.document_measures(self.cells[next_row, next_col],
+                                               current_time, ped, cell_size=self.cell_size)
                         continue
                     # If the first cell is not free then make the pedestrian wait.
                     else:
@@ -574,21 +573,22 @@ class Grid:
 
             selected_cell = self.__choose_best_neighbor(dijkstra, ped)
             # Get the distance the pedestrian should move
-            ped_row, ped_col, diag_bool = ped.move(selected_cell, constant_speed=constant_speed,
-                                                   max_steps=max_steps, cell_size=cell_size)
+            ped_row, ped_col, diag_bool = ped.move(selected_cell, current_time=current_time,
+                                                   constant_speed=constant_speed,
+                                                   max_steps=max_steps, cell_size=self.cell_size)
 
             # check if a complete diagonal step is possible.
             if np.abs(ped_row) >= 1.0 and np.abs(ped_col) >= 1.0:
                 # Check if the pedestrian should move a diagonally
                 ped.update_cell(selected_cell)
                 if selected_cell in self.measuring_points:
-                    self.document_measures(selected_cell, current_time, ped, cell_size=cell_size)
+                    self.document_measures(selected_cell, current_time, ped, cell_size=self.cell_size)
             if not diag_bool:
                 # Check if the pedestrian should move horizontally/vertically
                 if np.abs(ped_row) >= 1.0 or np.abs(ped_col) >= 1.0:
                     ped.update_cell(selected_cell)
                     if selected_cell in self.measuring_points:
-                        self.document_measures(selected_cell, current_time, ped, cell_size=cell_size)
+                        self.document_measures(selected_cell, current_time, ped, cell_size=self.cell_size)
 
             # If a target is reached remove the pedestrian provided the targets are absorbing,
             # otherwise update the new cell
@@ -604,7 +604,7 @@ class Grid:
         # Remove pedestrians who reached the target
         self.pedestrians = [ped for ped in self.pedestrians if ped not in to_remove_peds]
 
-    def simulate(self, no_of_steps, dijkstra=False, absorbing_targets=True, step_time: np.int = np.int_(300),
+    def simulate(self, no_of_steps, dijkstra=False, absorbing_targets=True, step_time: np.int = np.intc(300),
                  obstacle_avoidance: bool = True):
         """
         This method executes the simulation based on the type of cost function (rudimentary or dijkstra assigned)
@@ -701,7 +701,7 @@ class Grid:
         return pedestrians_count / measuring_area
 
     def add_pedestrian(self, row: np.intc, col: np.intc, speed: np.single = np.single(1.33),
-                       age: np.intc = np.int_(20)) -> None:
+                       age: np.intc = np.intc(20)) -> None:
         """
         Creates a new pedestrian on this grid and set the cell type where the pedestrian exists to pedestrian type.
         :param row: The row of the cell where the pedestrian is initially standing

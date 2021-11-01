@@ -49,7 +49,7 @@ def scenario_loader():
     print("Available scenario files are: ")
     for i, scenario_file in enumerate(scenario_files):
         print("Scenario", i, ": ", scenario_file)
-    scenario_number = int(input("Please select which scenario you wish to load. Enter scenario id:"))
+    scenario_number = int(input("Please select which scenario you wish to load. Enter scenario id: (no default value)"))
     filename = "./scenarios/" + scenario_files[scenario_number]
     # Open and read the scenario file
     with open(filename, newline='') as csvfile:
@@ -81,10 +81,34 @@ def scenario_builder():
     :return: Grid object, cell size meters in float
     """
     # Get size of grid from user
-    cell_size_meters = float(input("Please select the size of each cell in meters: "))
+    cell_size_input_accepted = False
+    while not cell_size_input_accepted:
+        cell_size_meters = input("Please select the size of each cell in meters: (default=0.4)")
+        if cell_size_meters.isdigit() and float(cell_size_meters) >= 0:
+            cell_size_input_accepted = True
+            cell_size_meters = float(cell_size_meters)
+        elif cell_size_meters == '':
+            cell_size_input_accepted = True
+            cell_size_meters = 0.4
+        else:
+            print(f"Unacceptable Input")
     print("Initial state of the scenario builder:")
 
-    rows, cols = tuple([eval(x) for x in input("Enter the size of the grid in the format: rows, columns: ").split(',')])
+    grid_size_input_accepted = False
+    while not grid_size_input_accepted:
+        grid_size = input("Enter the size of the grid in the format: rows, columns: "
+                          "default=30,30")
+        if grid_size == '':
+            grid_size_input_accepted = True
+            grid_size = [30, 30]
+        else:
+            grid_size = grid_size.split(',')
+            if len(grid_size) == 2 and all(dim.isdigit() and int(dim) > 0 for dim in grid_size):
+                grid_size_input_accepted = True
+                cell_size_meters = float(cell_size_meters)
+            else:
+                print(f"Unacceptable Input")
+    rows, cols = grid_size[0], grid_size[1]
     return Grid(rows, cols), cell_size_meters
 
 
