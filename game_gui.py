@@ -3,7 +3,7 @@ import pygame
 from grid_structure import *
 
 
-def create_button(screen, horz_pos: np.int32, vert_pos: np.int32, width: np.int32, height: np.int32, text: str,
+def create_button(screen, horz_pos: int, vert_pos: int, width: int, height: int, text: str,
                   button_color: tuple, text_color: tuple):
     """
     This function creates a pygame rectangle with text on top.
@@ -28,7 +28,7 @@ def create_button(screen, horz_pos: np.int32, vert_pos: np.int32, width: np.int3
     return button
 
 
-def start_game_gui(grid: Grid, max_steps: np.int32 = 200, step_time: np.int32 = 300,
+def start_game_gui(grid: Grid, max_steps: int = 200, step_time: int = 300,
                    dijkstra: bool = False, constant_speed: bool = True,
                    absorbing_targets: bool = True, periodic_boundary: bool = False):
     """

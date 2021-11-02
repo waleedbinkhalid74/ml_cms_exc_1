@@ -64,10 +64,6 @@ def scenario_loader():
         cell_scale_meters = 0.5
     else:
         cell_scale_meters = 1.0
-    # cell_scale_meters = float(input(
-    #     "For the given scenarios please refer to the discretization table in the notebook or in the README.md file."
-    #     "Please select the size of each cell in meters: "))
-    # visualize_state(scenario)
     scenario = parser_array2obj(scenario)
     return scenario, cell_scale_meters
 
@@ -133,17 +129,17 @@ def execute_rimea_4():
         rimea_4_6 = parser_array2obj(rimea_4_6)
 
     cell_scale_meters = 0.3333
-    rimea_4_1.set_cell_scale(0.3333)
+    rimea_4_1.set_cell_scale(cell_scale_meters)
     rimea_4_1.flood_pedestrians(1)
-    rimea_4_2.set_cell_scale(0.3333)
+    rimea_4_2.set_cell_scale(cell_scale_meters)
     rimea_4_2.flood_pedestrians(2)
-    rimea_4_3.set_cell_scale(0.3333)
+    rimea_4_3.set_cell_scale(cell_scale_meters)
     rimea_4_3.flood_pedestrians(3)
-    rimea_4_4.set_cell_scale(0.3333)
+    rimea_4_4.set_cell_scale(cell_scale_meters)
     rimea_4_4.flood_pedestrians(4)
-    rimea_4_5.set_cell_scale(0.3333)
+    rimea_4_5.set_cell_scale(cell_scale_meters)
     rimea_4_5.flood_pedestrians(5)
-    rimea_4_6.set_cell_scale(0.3333)
+    rimea_4_6.set_cell_scale(cell_scale_meters)
     rimea_4_6.flood_pedestrians(6)
 
     # Actual Measuring Point
