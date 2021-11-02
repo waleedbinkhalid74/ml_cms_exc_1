@@ -19,10 +19,10 @@ def crowd_simulator():
         load_scenario_bool = input(f"Do you want to load a scenario? (y/n  default=n)")
         if load_scenario_bool == 'y':
             scenario_input_accepted = True
-            scenario, cell_size_meters = scenario_loader()
+            scenario, cell_scale_meters = scenario_loader()
         elif load_scenario_bool == 'n' or load_scenario_bool == '':
             scenario_input_accepted = True
-            scenario, cell_size_meters = scenario_builder()
+            scenario, cell_scale_meters = scenario_builder()
         else:
             print(f"Unacceptable Input")
 
@@ -50,8 +50,8 @@ def crowd_simulator():
         else:
             print(f"Unacceptable Input")
 
-    scenario.set_cell_size(cell_size_meters)
-    step_time = int(cell_size_meters * 750)  # If the cell is of 1 meter then the average speed of 1.33 m/s
+    scenario.set_cell_scale(cell_scale_meters)
+    step_time = int(cell_scale_meters * 750)  # If the cell is of 1 meter then the average speed of 1.33 m/s
     game_gui.start_game_gui(scenario, max_steps=max_steps, dijkstra=dijkstra, step_time=step_time)
 
 

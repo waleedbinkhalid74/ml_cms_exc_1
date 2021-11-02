@@ -33,7 +33,6 @@ def start_game_gui(grid: Grid, max_steps: np.int32 = 200, step_time: np.int32 = 
                    absorbing_targets: bool = True, periodic_boundary: bool = False):
     """
     This function sets up and starts a pygame gui window to simulate a grid object
-    :param cell_size: cell dimension in meter
     :param grid: Grid object to simulate
     :param max_steps: Maximum number of simulation steps
     :param step_time: Duration of one step in milli-seconds
@@ -143,7 +142,7 @@ def start_game_gui(grid: Grid, max_steps: np.int32 = 200, step_time: np.int32 = 
             step_waiting_time = pygame.time.get_ticks() + step_time
 
         if grid.pedestrians:
-            steps = max([ped.steps for ped in grid.pedestrians])
+            steps = max(max([ped.steps for ped in grid.pedestrians]), steps)
 
         # Simulation done
         if (not grid.pedestrians or steps >= max_steps) and simulation_running:

@@ -168,33 +168,33 @@ class Pedestrian:
         :param new_cell: The cell to move to
         :return: None
         """
-        self.steps += 1
         self.cell.cell_type = CellType.EMPTY
         self.cell.path = True
         if len(self.last_10_steps) >= 10:
             self.last_10_steps.pop(0)
-        self.last_10_steps.append([self.cell, self.delay * self.steps])
         self.cell = new_cell
 
     def move(self, cell: Cell, constant_speed: bool = True,
              current_time: np.intc = np.intc(0), max_steps: np.intc = np.intc(1000),
-             cell_size: np.single = np.single(0.4)) -> (np.single, np.single, bool):
+             cell_scale: np.single = np.single(0.4)) -> (np.single, np.single, bool):
         """
         Checks if the pedestrian is maintaining their speed. If so then checks if a diagonal step is made or a straight step.
         A straight step is straight forward but if it is a diagonal step then movements potentials are accumulated
         and if they are more than 1 then the diagonal move can be made.
         :param constant_speed: A flag indicating whether the speed is constant or individual to pedestrians
-        :param cell_size: cell dimension in meter
+        :param cell_scale: cell dimension in meter
         :param max_steps: Maximum number of allow steps
         :param current_time: Time passed since the beginning of simulation in millisecond
         :param cell: The cell where the pedestrian needs to move
         :return: a pair of float indicating the distance &
             direction the pedestrian should move and a bool stating is the move is diagonal or not
         """
-        cell_delay = self.delay * cell_size
+        cell_delay = self.delay * cell_scale
         if constant_speed or \
                 (current_time > self.last_move + cell_delay and self.steps <= max_steps):
             self.last_move = current_time
+            self.last_10_steps.append([self.cell, self.delay * self.steps])
+            self.steps += 1
             if self.cell.row != cell.row and self.cell.col != cell.col:
                 # diagonal step
                 # the pedestrian only moves 0.7 horizontally & vertically
@@ -216,28 +216,25 @@ class Pedestrian:
         else:
             return 0, 0, False
 
-    def measure_speed(self, cell_size: np.single = np.single(0.4)):
+    def measure_speed(self, cell_scale: np.single = np.single(0.4)):
         """
         Pedestrian class function that measures the speed of the pedestrain considering its last_steps steps
-        :param cell_size: The size of cell in meters
+        :param cell_scale: The size of cell in meters
         :return: The average speed over the last_steps in meter/second
         """
         # measure the covered distance by last_steps
-        # Scale the distance according to cell_size
+        # Scale the distance according to cell_scale
         # get the speed by dividing distance / (last_time - first_time)
 
         distance = 0
-        time = 0
-        last_steps = np.asarray(self.last_10_steps)
+        last_steps = np.array(self.last_10_steps)
         if len(last_steps) <= 2:
             return 0
         initial_time = last_steps[0, 1]
         final_time = last_steps[-1, 1]
         first_cell = last_steps[0, 0]
-        time = (final_time - initial_time) * cell_size
+        time = (final_time - initial_time) * cell_scale
         for step in range(1, len(last_steps)):
-            # time = last_steps[step, 1] - initial_time
-            # time = time.total_seconds()
             if last_steps[step, 0].row != first_cell.row and last_steps[step, 0].col != first_cell.col:
                 # diagonal step
                 distance += 1.42
@@ -246,7 +243,7 @@ class Pedestrian:
                 distance += 1.0
             first_cell = last_steps[step, 0]
         if time > 0:
-            return distance * cell_size / (time / 1000)
+            return distance * cell_scale / (time / 1000)
         else:
             return 0
 
@@ -265,13 +262,14 @@ class Grid:
     #######################################################################################################
     # Initialization functions
     #######################################################################################################
-    def __init__(self, rows: np.intc, cols: np.intc, cells: np.ndarray = None, cell_size: np.single = np.single(1.0)):
+    def __init__(self, rows: np.intc, cols: np.intc, cells: np.ndarray = None,
+                 cell_scale: np.single = np.single(1.0)):
         """
         Set up basic attributes for the GUI object
         :param rows: row size of grid
         :param cols: column size of grid
         :param cells: np array of objects of type Cell that constitute the entire grid
-        :param cell_size: Size of each cell in meters.
+        :param cell_scale: Size of each cell in meters.
         """
         super().__init__()
 
@@ -282,7 +280,7 @@ class Grid:
 
         self.rows: np.intc = rows
         self.cols: np.intc = cols
-        self.cell_size: np.single = cell_size
+        self.cell_scale: np.single = cell_scale
         self.time_step: np.intc = 0
 
         # Attributes used for visualization and animation
@@ -306,13 +304,13 @@ class Grid:
         # This can be filled by calling Grid.add_measuring_point
         self.measuring_points = []
 
-    def set_cell_size(self, cell_size: np.single = np.single(1.0)):
+    def set_cell_scale(self, cell_scale: np.single = np.single(1.0)):
         """
         Setter to set the attribute of cell size in meters
-        :param cell_size: size of a single cell in meters
+        :param cell_scale: size of a single cell in meters
         :return:
         """
-        self.cell_size = cell_size
+        self.cell_scale = cell_scale
 
     def assign_neighbours(self):
         """
@@ -373,7 +371,7 @@ class Grid:
         if density is None:
             print("Please supply a density.")
         else:
-            grid_area = self.rows * self.cols * self.cell_size ** 2
+            grid_area = self.rows * self.cols * self.cell_scale ** 2
             no_of_pedestrians = int(density * grid_area)
             print("Adding", no_of_pedestrians, "to the grid.")
             seed(np.random.randint(0, 10))
@@ -565,7 +563,7 @@ class Grid:
                     if self.cells[next_row, next_col].cell_type.value == CellType.EMPTY.value:
                         ped.update_cell(self.cells[next_row, next_col])
                         self.document_measures(self.cells[next_row, next_col],
-                                               current_time, ped, cell_size=self.cell_size)
+                                               current_time, ped)
                         continue
                     # If the first cell is not free then make the pedestrian wait.
                     else:
@@ -575,20 +573,20 @@ class Grid:
             # Get the distance the pedestrian should move
             ped_row, ped_col, diag_bool = ped.move(selected_cell, current_time=current_time,
                                                    constant_speed=constant_speed,
-                                                   max_steps=max_steps, cell_size=self.cell_size)
+                                                   max_steps=max_steps, cell_scale=self.cell_scale)
 
             # check if a complete diagonal step is possible.
             if np.abs(ped_row) >= 1.0 and np.abs(ped_col) >= 1.0:
                 # Check if the pedestrian should move a diagonally
                 ped.update_cell(selected_cell)
                 if selected_cell in self.measuring_points:
-                    self.document_measures(selected_cell, current_time, ped, cell_size=self.cell_size)
+                    self.document_measures(selected_cell, current_time, ped)
             if not diag_bool:
                 # Check if the pedestrian should move horizontally/vertically
                 if np.abs(ped_row) >= 1.0 or np.abs(ped_col) >= 1.0:
                     ped.update_cell(selected_cell)
                     if selected_cell in self.measuring_points:
-                        self.document_measures(selected_cell, current_time, ped, cell_size=self.cell_size)
+                        self.document_measures(selected_cell, current_time, ped)
 
             # If a target is reached remove the pedestrian provided the targets are absorbing,
             # otherwise update the new cell
@@ -633,17 +631,16 @@ class Grid:
     #######################################################################################################
     # Visiulization functions
     #######################################################################################################
-    def document_measures(self, measuring_point, current_time, ped, cell_size: np.single = np.single(0.4)):
+    def document_measures(self, measuring_point, current_time, ped):
         """
         Stores various parameters for the pedestrians who step into the measurement cells in a csv file in the logs folder.
         :param measuring_point: The current measuring point cell
         :param current_time: Time since the start of the simulation in milliseconds
         :param ped: the pedestrian passing through the measuring point
-        :param cell_size:  The length of cell in meters
         :return:
         """
-        density = self.measure_density(measuring_point, cell_size=cell_size)
-        speed = ped.measure_speed(cell_size=cell_size)
+        density = self.measure_density(measuring_point)
+        speed = ped.measure_speed(cell_scale=self.cell_scale)
         if Path("./logs/measuring_points_logs.csv").exists():
             # Append to file
             measuring_points_logs = open("./logs/measuring_points_logs.csv", "a", newline="")
@@ -662,11 +659,10 @@ class Grid:
             writer.writerow(measuring_points_row)
         measuring_points_logs.close()
 
-    def measure_density(self, measuring_point, cell_size: np.single = np.single(0.4)):
+    def measure_density(self, measuring_point):
         """
         Grid class function that records the density of pedestrians in a certain region.
         :param measuring_point: The current measuring point cell
-        :param cell_size: The scale of cell in meters
         :return:
         """
 
@@ -680,23 +676,27 @@ class Grid:
 
         row_min = measuring_point.row - 4 if measuring_point.row >= 4 else 0
         row_max = measuring_point.row + 5 if measuring_point.row + 5 < self.rows else self.rows - 1
-        if self.rows - row_max < 5:
-            row_min = 10 - (self.rows - measuring_point.row) if 10 - (self.rows - measuring_point.row) >= 0 else 0
+        if row_max - measuring_point.row < 5:
+            row_min = row_min - (5 - (row_max - measuring_point.row)) \
+                if row_min - (5 - (row_max - measuring_point.row)) >= 0 else 0
         if measuring_point.row < 4:
+            # row_min == 0
             row_max = 9 if 9 < self.rows else self.rows - 1
 
         col_min = measuring_point.col - 4 if measuring_point.col >= 4 else 0
         col_max = measuring_point.col + 5 if measuring_point.col + 5 < self.cols else self.cols - 1
-        if self.cols - col_max < 5:
-            col_min = 10 - (self.cols - measuring_point.col) if 10 - (self.cols - measuring_point.col) >= 0 else 0
+        if col_max - measuring_point.col < 5:
+            col_min = col_min - (5 - (col_max - measuring_point.col)) \
+                if col_min - (5 - (col_max - measuring_point.col)) >= 0 else 0
         if measuring_point.col < 4:
+            # col_min == 0
             col_max = 9 if 9 < self.cols else self.cols - 1
 
         # Count pedestrians in the square
         pedestrians_count = len([1 for r in range(row_min, row_max)
                                  for c in range(col_min, col_max) if self.cells[r, c].cell_type.value == 1])
-        # Scale the area according to cell_size
-        measuring_area = ((row_max - row_min) * (col_max - col_min)) * (cell_size * cell_size)
+        # Scale the area according to cell_scale
+        measuring_area = ((row_max - row_min) * (col_max - col_min)) * (self.cell_scale * self.cell_scale)
 
         return pedestrians_count / measuring_area
 
