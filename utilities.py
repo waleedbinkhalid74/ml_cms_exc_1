@@ -49,7 +49,7 @@ def scenario_loader():
     print("Available scenario files are: ")
     for i, scenario_file in enumerate(scenario_files):
         print("Scenario", i, ": ", scenario_file)
-    scenario_number = int(input("Please select which scenario you wish to load. Enter scenario id:"))
+    scenario_number = int(input("Please select which scenario you wish to load. Enter scenario id: (no default value)"))
     filename = "./scenarios/" + scenario_files[scenario_number]
     # Open and read the scenario file
     with open(filename, newline='') as csvfile:
@@ -59,17 +59,17 @@ def scenario_loader():
     # For some presaved scenarios the cell size is not simply 1m but different. This has been hardcoded for
     # some scenarios below
     if scenario_files[scenario_number] == "rimea_test1.csv":
-        cell_size_meters = 0.4
+        cell_scale_meters = 0.4
     elif scenario_files[scenario_number] == "rimea_test6.csv":
-        cell_size_meters = 0.5
+        cell_scale_meters = 0.5
     else:
-        cell_size_meters = 1.0
-    # cell_size_meters = float(input(
+        cell_scale_meters = 1.0
+    # cell_scale_meters = float(input(
     #     "For the given scenarios please refer to the discretization table in the notebook or in the README.md file."
     #     "Please select the size of each cell in meters: "))
     # visualize_state(scenario)
     scenario = parser_array2obj(scenario)
-    return scenario, cell_size_meters
+    return scenario, cell_scale_meters
 
 
 def scenario_builder():
@@ -81,11 +81,35 @@ def scenario_builder():
     :return: Grid object, cell size meters in float
     """
     # Get size of grid from user
-    cell_size_meters = float(input("Please select the size of each cell in meters: "))
+    cell_scale_input_accepted = False
+    while not cell_scale_input_accepted:
+        cell_scale_meters = input("Please select the size of each cell in meters: (default=0.4)")
+        if cell_scale_meters.isdigit() and float(cell_scale_meters) >= 0:
+            cell_scale_input_accepted = True
+            cell_scale_meters = float(cell_scale_meters)
+        elif cell_scale_meters == '':
+            cell_scale_input_accepted = True
+            cell_scale_meters = 0.4
+        else:
+            print(f"Unacceptable Input")
     print("Initial state of the scenario builder:")
 
-    rows, cols = tuple([eval(x) for x in input("Enter the size of the grid in the format: rows, columns: ").split(',')])
-    return Grid(rows, cols), cell_size_meters
+    grid_size_input_accepted = False
+    while not grid_size_input_accepted:
+        grid_size = input("Enter the size of the grid in the format: rows, columns: "
+                          "default=30,30")
+        if grid_size == '':
+            grid_size_input_accepted = True
+            grid_size = [30, 30]
+        else:
+            grid_size = grid_size.split(',')
+            if len(grid_size) == 2 and all(dim.isdigit() and int(dim) > 0 for dim in grid_size):
+                grid_size_input_accepted = True
+                cell_scale_meters = float(cell_scale_meters)
+            else:
+                print(f"Unacceptable Input")
+    rows, cols = grid_size[0], grid_size[1]
+    return Grid(rows, cols), cell_scale_meters
 
 
 def execute_rimea_4():
@@ -108,18 +132,18 @@ def execute_rimea_4():
         rimea_4_6 = np.array(list(csv.reader(csvfile))).astype(int)
         rimea_4_6 = parser_array2obj(rimea_4_6)
 
-    cell_size_meters = 0.3333
-    rimea_4_1.set_cell_size(0.3333)
+    cell_scale_meters = 0.3333
+    rimea_4_1.set_cell_scale(0.3333)
     rimea_4_1.flood_pedestrians(1)
-    rimea_4_2.set_cell_size(0.3333)
+    rimea_4_2.set_cell_scale(0.3333)
     rimea_4_2.flood_pedestrians(2)
-    rimea_4_3.set_cell_size(0.3333)
+    rimea_4_3.set_cell_scale(0.3333)
     rimea_4_3.flood_pedestrians(3)
-    rimea_4_4.set_cell_size(0.3333)
+    rimea_4_4.set_cell_scale(0.3333)
     rimea_4_4.flood_pedestrians(4)
-    rimea_4_5.set_cell_size(0.3333)
+    rimea_4_5.set_cell_scale(0.3333)
     rimea_4_5.flood_pedestrians(5)
-    rimea_4_6.set_cell_size(0.3333)
+    rimea_4_6.set_cell_scale(0.3333)
     rimea_4_6.flood_pedestrians(6)
 
     # Actual Measuring Point
@@ -178,26 +202,26 @@ def execute_rimea_4():
     if Path("./logs/measuring_points_logs.csv").exists():
         os.remove("logs/measuring_points_logs.csv")
 
-    start_game_gui(rimea_4_1, max_steps=30, dijkstra=False, step_time=750 * cell_size_meters,
-                   cell_size=cell_size_meters, periodic_boundary=True)
+    start_game_gui(rimea_4_1, max_steps=30, dijkstra=False, step_time=750 * cell_scale_meters,
+                   periodic_boundary=True)
     copyfile("./logs/measuring_points_logs.csv", "./logs/measuring_points_logs_rimea_4_density1.csv")
 
-    start_game_gui(rimea_4_2, max_steps=30, dijkstra=False, step_time=750 * cell_size_meters,
-                   cell_size=cell_size_meters, periodic_boundary=True)
+    start_game_gui(rimea_4_2, max_steps=30, dijkstra=False, step_time=750 * cell_scale_meters,
+                   periodic_boundary=True)
     copyfile("./logs/measuring_points_logs.csv", "./logs/measuring_points_logs_rimea_4_density2.csv")
 
-    start_game_gui(rimea_4_3, max_steps=30, dijkstra=False, step_time=750 * cell_size_meters,
-                   cell_size=cell_size_meters, periodic_boundary=True)
+    start_game_gui(rimea_4_3, max_steps=30, dijkstra=False, step_time=750 * cell_scale_meters,
+                   periodic_boundary=True)
     copyfile("./logs/measuring_points_logs.csv", "./logs/measuring_points_logs_rimea_4_density3.csv")
 
-    start_game_gui(rimea_4_4, max_steps=30, dijkstra=False, step_time=750 * cell_size_meters,
-                   cell_size=cell_size_meters, periodic_boundary=True)
+    start_game_gui(rimea_4_4, max_steps=30, dijkstra=False, step_time=750 * cell_scale_meters,
+                   periodic_boundary=True)
     copyfile("./logs/measuring_points_logs.csv", "./logs/measuring_points_logs_rimea_4_density4.csv")
 
-    start_game_gui(rimea_4_5, max_steps=30, dijkstra=False, step_time=750 * cell_size_meters,
-                   cell_size=cell_size_meters, periodic_boundary=True)
+    start_game_gui(rimea_4_5, max_steps=30, dijkstra=False, step_time=750 * cell_scale_meters,
+                   periodic_boundary=True)
     copyfile("./logs/measuring_points_logs.csv", "./logs/measuring_points_logs_rimea_4_density5.csv")
 
-    start_game_gui(rimea_4_6, max_steps=30, dijkstra=False, step_time=750 * cell_size_meters,
-                   cell_size=cell_size_meters, periodic_boundary=True)
+    start_game_gui(rimea_4_6, max_steps=30, dijkstra=False, step_time=750 * cell_scale_meters,
+                   periodic_boundary=True)
     copyfile("./logs/measuring_points_logs.csv", "./logs/measuring_points_logs_rimea_4_density6.csv")
