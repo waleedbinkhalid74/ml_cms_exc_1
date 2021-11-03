@@ -1,6 +1,13 @@
 references/
 *.log
+scenarios/~.*
+gui.py
 *.dvi
 *.out
 *.gz
 *.aux
+.venv
+.ipynb_checkpoints/
+*.idea/
+__pycache__/
+report_exc_1/
